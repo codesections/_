@@ -30,12 +30,3 @@ sub choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) ==
 
     die X::Match::NoMatch.new: :capture($topic.Capture):branches[@fns]
 }
-
-
-
-# sub match(*@fns where all .map: * ~~ Code) {
-#     my \topic = callframe(1).my<$_>;
-#     if @fns.first(*.cando: topic.List.Capture) -> &fn {
-#         fn(|topic)}
-#     else { die 'Matches must be exhaustive'}
-# }
