@@ -19,9 +19,8 @@ class X::Match::NoMatch is Exception is export {
 }
 
 sub choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) == +$_)  is export {
-    # TODO: smartmatching against the signature should be enough, but there are some bugs.
-    #       https://github.com/rakudo/rakudo/issues/4558
-    #       Once those are fixed, remove the redundant params check.
+    # TODO: smartmatching against the signature works post rakudo/rakudo#4573
+    #       but not before.  Add a version check.
 
     for @fns -> &f {
         with @fns[$++^..*].first: { .signature ~~ &f.signature } {
