@@ -1,0 +1,30 @@
+{
+  "auth" : "zef:codesections",
+  "authors" : [
+    "Daniel Sockwell"
+  ],
+  "build-depends" : [ ],
+  "depends" : [ ],
+  "description" : "A meta package for zero-dependency micro packages of under 70 lines of code",
+  "license" : "Artistic-2.0",
+  "name" : "_",
+  "perl" : "6.d",
+  "provides" : {
+      "_": "_.rakumod",
+      "Pattern::Match": "Pattern/Match.rakumod"
+  },
+  "resources" : [ ],
+  "source-url" : "https://github.com/codesections/_.git",
+  "support" : {
+    "email" : "daniel@codesections.com"
+  },
+  "tags" : [
+    "micro",
+    "bundle",
+    "underscore",
+    "_",
+    "metapackage"
+  ],
+  "test-depends" : [ ],
+  "version" : "0.0.1"
+}
