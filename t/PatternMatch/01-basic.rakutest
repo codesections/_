@@ -1,8 +1,8 @@
 use Test;
 
-use lib '/home/dsock/projects/_';
-use _;
+use Pattern::Match;
 
+plan 2;
 subtest "Handles basic patterns", {
     my @users = [ { :name<Alice> },
                   { :name<Bob>, :logged-in },
