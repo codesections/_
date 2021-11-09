@@ -26,12 +26,11 @@ class X::PatternMatch::NoMatch is Exception is export {
 sub shadows(&prior-fn, &cur-fn) {
     sub signature-with-literals($_ --> List()) {
         .signature.params.map: -> $param { given $param.raku {
-            m/^\s?[ $<number>=[ '-'? \d+ ['.' \d+]? 'e0'? ]
-                  | $<str>   =[ '"'  <-["]>*  '"'         ] ] $/;
+            m/^\s?<( [ $<number>=[ '-'? \d+ ['.' \d+]? 'e0'? ]
+                     | $<str>   =[ '"'  <-["]>*  '"'         ] ])> $/;
 
-            when $<number> { (+$<number>).WHAT }
-            when $<str>    { Str               }
-            default        { $param.type       }}}}
+            with $/  { (val ~$_).WHAT }
+            else     { $param.type    }}}}
 
     &prior-fn.signature ~~ &cur-fn.signature
       or &prior-fn.signature.params.grep({ .sigil eq '$' && .type !=:= Any})
