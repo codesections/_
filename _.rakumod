@@ -38,9 +38,8 @@ sub choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) ==
     for @fns -> &f {
         if @fns[$++^..*].first({.&shadows: &f}) -> $_ {
            die X::PatternMatch::Unreachable.new: :shadowed(.signature) :prior(&f.signature) }
-        unless $match {
-            if try &f.cando($topic.List.Capture) ->$ (&fn) {
-                ($match, $return-val) = (True, fn(|$topic)) } } }
+        if $match.not && try &f.cando($topic.List.Capture) ->$ (&fn) {
+            ($match, $return-val) = (True, fn(|$topic)) }}
 
     $match ?? $return-val !! die X::PatternMatch::NoMatch.new: :capture($topic.raku):branches[@fns]
 }
