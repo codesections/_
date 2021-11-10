@@ -1,8 +1,11 @@
 use Test;
-use _;
 
 unit sub MAIN(Bool :b(:$bench), :r(:$runs)=1000);
 
+use-ok '_',                   "Full import works";
+use-ok '_ <Self::Recursion>', "Submodule-only import works";
+
+use _;
 { sub countdown($seconds) { if $seconds ≥ 0 { "$seconds…", |(&_($seconds - 1)) }
                             else            { "BLASTOFF!" } }
 

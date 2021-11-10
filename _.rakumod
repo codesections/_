@@ -1,5 +1,8 @@
 need Self::Recursion;
 
-my %export =  Recursion::EXPORT::DEFAULT::.pairs.Hash;
+my %modules = ('Self::Recursion' => Recursion::EXPORT::DEFAULT::.pairs.Hash);
 
-sub EXPORT is export { %export.Map }
+sub EXPORT(*@package-subset)  {
+    die "TODO" when @package-subset ⊈ %modules.keys;
+    %modules{@package-subset || *}».List.flat.Map
+}
