@@ -6,15 +6,15 @@ class X::_::Unsupported is Exception is export {
                    }
 }
 
-## Dynamic var approch - slowest (~ 10s for 1000 fn calls)
-our &_ is dynamic is export =  {
-    my &outer;
-    if callframe(1).code.?multi.not                        { &outer = callframe(1).code }
-    elsif callframe(1).code.name eq callframe(2).code.name { &outer = callframe(2).code }
-    else                                                   { die X::_::Unsupported.new  }
+sub ROUTINE is rw {
+    my &calling-fn;
+    Proxy.new: FETCH => method ()     { &calling-fn },
+               STORE => method (&new is raw){ &calling-fn = &new }}
 
-
-    &outer.wrap: sub (|c) { my &_ is dynamic = nextcallee;
-                            &_(|c)}
-    outer $_;
-}
+my $fn := ROUTINE;
+our sub term:<&_> is export {
+    if callframe(1).code.?multi.not                     { $fn = callframe(1).code }
+    elsif callframe(1).code.name eq callframe(2).code.name { $fn = callframe(2).code }
+    else                                               { die X::_::Unsupported.new }
+    $fn
+};
