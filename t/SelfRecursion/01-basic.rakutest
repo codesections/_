@@ -1,0 +1,34 @@
+use Test;
+use _;
+
+unit sub MAIN(Bool :b(:$bench), :r(:$runs)=1000);
+
+{ sub countdown($seconds) { if $seconds ≥ 0 { "$seconds…", |(&_($seconds - 1)) }
+                            else            { "BLASTOFF!" } }
+
+  countdown(5).&is-deeply: <5… 4… 3… 2… 1… 0… BLASTOFF!>,
+                           "Basic sub recurses";
+}
+
+
+{ proto count-up(|){{*}}
+  multi count-up(Int)                            { "Ok, buster, you're in trouble now!" }
+  multi count-up(Int $one-two-three where * ≤ 3) { $one-two-three, |&_($one-two-three + 1)  }
+
+  (try count-up(1)).&is-deeply: (1, 2, 3, "Ok, buster, you're in trouble now!"),
+                                           "Basic multi recurses";
+}
+
+
+if $bench {
+    my @a;
+    sub simple-fn($n) { @a.push($n);
+                        &_($n - 1) if $n > 0 }
+
+    my $start-time = now;
+    simple-fn($runs);
+    @a.elems.&is: $runs+1, "Deep regression is run the right number of times";
+    (@a.head(3), @a.tail(3)).&is-deeply: (($runs, $runs-1, $runs-2).Seq, (2, 1, 0).Seq),
+                                         "Deep regression returns correct results";
+    diag "Ran $runs calls in &sprintf('%.3f', now - $start-time) seconds";
+}
