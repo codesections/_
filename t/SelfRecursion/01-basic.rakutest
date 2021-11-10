@@ -19,6 +19,13 @@ unit sub MAIN(Bool :b(:$bench), :r(:$runs)=1000);
                                            "Basic multi recurses";
 }
 
+{ multi fib(0) { 0 }
+  multi fib(1) { 1 }
+  multi fib($n where * > 0) { &_($n-1) + &_($n-2) }
+
+  throws-like {fib 4}, X::_::Unsupported;
+}
+
 
 if $bench {
     my @a;

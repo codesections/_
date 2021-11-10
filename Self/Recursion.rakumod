@@ -1,6 +1,6 @@
 unit module Recursion;
 
-class X::_::Unsupported is Exception {
+class X::_::Unsupported is Exception is export {
     method message { "Sorry, multis with no proto (or with an onlystar proto) don't currently\n"
                      ~"work with \&_.  Either use \&?ROUTINE instead, or add a proto with " ~ '{{*}}'
                    }
