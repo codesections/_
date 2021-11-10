@@ -10,7 +10,8 @@
   "name" : "_",
   "perl" : "6.d",
   "provides" : {
-      "_": "_.rakumod"
+      "_": "_.rakumod",
+      "Self::Recursion": "Self/Recursion.rakumod"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",
