@@ -1,8 +1,19 @@
 need Self::Recursion;
 
+class X::Import::InvalidPos is X::Import::Positional {
+    has @.valid;
+    method message {
+        "Error while importing from '$.source-package':\n"
+        ~ "The positional argument(s) in the 'use' statement were not valid.\n"
+        ~"Valid positional arguments are:\n" ~$.valid.join("\n").indent(4)
+    }
+}
+
 my %modules = ('Self::Recursion' => Recursion::EXPORT::DEFAULT::.pairs.Hash);
 
 sub EXPORT(*@package-subset)  {
-    die "TODO" when @package-subset ⊈ %modules.keys;
+    when @package-subset ⊈ %modules.keys {
+        die X::Import::InvalidPos.new: :source-package<_>:valid(%modules.keys)
+    }
     %modules{@package-subset || *}».List.flat.Map
 }

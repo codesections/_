@@ -2,8 +2,11 @@ use Test;
 
 unit sub MAIN(Bool :b(:$bench), :r(:$runs)=1000);
 
-use-ok '_',                   "Full import works";
-use-ok '_ <Self::Recursion>', "Submodule-only import works";
+subtest "Can use ok", {
+use-ok      '_',                    "Full import works";
+use-ok      '_ <Self::Recursion>',  "Submodule-only import works";
+throws-like {EVAL q[ use _ <SR> ]}, X::Import::Positional,
+                                    "Invalid submodules throw" }
 
 use _;
 { sub countdown($seconds) { if $seconds ≥ 0 { "$seconds…", |(&_($seconds - 1)) }
