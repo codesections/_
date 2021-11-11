@@ -1,0 +1,40 @@
+use Test;
+use _;
+
+my ($s80, $s72, $s60, $s30) = q:to/§end/.split("\n\n");
+A naive word wrapper intended to be used for aligning error messages. Naive in
+the sense that it assumes all graphemes are the same width, and words that are
+too long for a line, will simply live on a line of their own, even if that is
+longer than the given maximum width.
+
+A naive word wrapper intended to be used for aligning error messages.
+Naive in the sense that it assumes all graphemes are the same width, and
+words that are too long for a line, will simply live on a line of their
+own, even if that is longer than the given maximum width.
+
+A naive word wrapper intended to be used for aligning error
+messages. Naive in the sense that it assumes all graphemes
+are the same width, and words that are too long for a line,
+will simply live on a line of their own, even if that is
+longer than the given maximum width.
+
+A naive word wrapper intended
+to be used for aligning error
+messages. Naive in the sense
+that it assumes all graphemes
+are the same width, and words
+that are too long for a line,
+will simply live on a line of
+their own, even if that is
+longer than the given maximum
+width.
+§end
+
+my $in = $s80.lines.join(' ');
+
+subtest "Matches Str.naive-word-wrapper", {
+    line-wrap($in, :max(80)).&is: $s80, "Wraps basic text to 80 chars";
+    line-wrap($in, :max(72)).&is: $s72, "Wraps basic text to 72 chars";
+    line-wrap($in, :max(60)).&is: $s60, "Wraps basic text to 60 chars";
+    line-wrap($in, :max(30)).&is: $s30, "Wraps basic text to 30 chars";
+}
