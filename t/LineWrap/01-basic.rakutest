@@ -28,6 +28,7 @@ will simply live on a line of
 their own, even if that is
 longer than the given maximum
 width.
+
 §end
 
 my $in = $s80.lines.join(' ');

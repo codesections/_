@@ -1,12 +1,9 @@
 unit module Wrap;
-sub line-wrap(Str $text, :$max = 80, :$indent = "" --> Str:D) is export {
-        my @lines = [''];
-        my Int $width = $indent.chars;
 
-        for $text.trim.words -> $_ is copy {
-            if $width + .chars >= $max { @lines.push: $indent ~ $_;
-                                         $width = $indent.chars + .chars}
-             else                      { $width += .chars + 1;
-                                         @lines.tail ~= " $_" }}
-        @lines.join("\n").trim
-    }
+sub line-wrap(Str $text, :$max = 80, :$prefix = '' --> Str:D) is export {
+    my @lines = $prefix;
+    for $text.comb(/\s+|\S+/) {
+        if @lines[*-1].chars + .chars > $max { @lines.push: ~(S[^\s+ (.*)] = $0)}
+        else                                 { @lines[*-1] ~= $_}  }
+    @lines».trim-trailing.join: "\n$prefix"
+}
