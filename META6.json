@@ -11,7 +11,8 @@
   "perl" : "6.d",
   "provides" : {
       "_": "_.rakumod",
-      "Self::Recursion": "Self/Recursion.rakumod"
+      "Self::Recursion": "Self/Recursion.rakumod",
+      "Line::Wrap": "Line/Wrap.rakumod"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",
