@@ -1,5 +1,5 @@
 need Self::Recursion;
-need Line::Wrap;
+need Text::Wrap;
 
 class X::Import::InvalidPos is X::Import::Positional {
     has @.valid;

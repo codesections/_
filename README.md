@@ -43,7 +43,7 @@ beliefs, but two that I'd like to focus on now):
       [only one task](https://en.wikipedia.org/wiki/Unix_philosophy)
 
     * Software is difficult to reason about – and therefore dificult to build well – when it has too
-      many moving parts or systems become two big
+      many moving parts or systems become too big
 
 In many instances, these two beliefs complement one another – keeping things simple will reduce the
 number of pieces it takes to build software _and_ will lower the complexity of each piece.  But

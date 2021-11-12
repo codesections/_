@@ -1,0 +1,155 @@
+use Test;
+use _;
+
+subtest "Wraps line to various lengths", {
+    my ($s80, $s72, $s60, $s30) = q:to/§end/.split("\n\n");
+        A naive word wrapper intended to be used for aligning error messages. Naive in
+        the sense that it assumes all graphemes are the same width, and words that are
+        too long for a line, will simply live on a line of their own, even if that is
+        longer than the given maximum width.
+
+        A naive word wrapper intended to be used for aligning error messages.
+        Naive in the sense that it assumes all graphemes are the same width, and
+        words that are too long for a line, will simply live on a line of their
+        own, even if that is longer than the given maximum width.
+
+        A naive word wrapper intended to be used for aligning error
+        messages. Naive in the sense that it assumes all graphemes
+        are the same width, and words that are too long for a line,
+        will simply live on a line of their own, even if that is
+        longer than the given maximum width.
+
+        A naive word wrapper intended
+        to be used for aligning error
+        messages. Naive in the sense
+        that it assumes all graphemes
+        are the same width, and words
+        that are too long for a line,
+        will simply live on a line of
+        their own, even if that is
+        longer than the given maximum
+        width.
+
+        §end
+
+        my $in = $s80.lines.join(' ');
+
+        wrap-words($in, :length(80)).&is: $s80, "Wraps basic text down to 80 chars";
+        wrap-words($in, :length(72)).&is: $s72, "Wraps basic text down to 72 chars";
+        wrap-words($in, :length(60)).&is: $s60, "Wraps basic text down to 60 chars";
+        wrap-words($in, :length(30)).&is: $s30, "Wraps basic text down to 30 chars";
+        wrap-words($s30, :length(80)).&is: $s80, "Wraps basic text up to 80 chars";
+
+        wrap-words($s30, :length(80), :keep-newlines).&is: $s30, "Only wraps long lines with :keep-newlines";
+
+        wrap-words("\n" ~$in, :length(80)).&is: $s80, "Wraps basic text that starts with a ␤";
+}
+
+subtest "Applies indent/prefix", {
+    my ($s1, $s2, $s3) = q:to/§natural-language-principles/.split: "\n\n";
+        We do not all have to write like Faulkner, or program like Dijkstra. I will
+        gladly tell people what my programming style is, and I will even tell them where
+        I think their own style is unclear or makes me jump through mental hoops. But I
+        do this as a fellow programmer, not as the Perl god. Some language designers
+        hope to enforce style through various typographical means such as forcing (more
+        or less) one statement per line. This is all very well for poetry, but I don't
+        think I want to force everyone to write poetry in Perl. Such stylistic limits
+        should be self-imposed, or at most policed by consensus among your buddies.
+
+                We do not all have to write like Faulkner, or program like Dijkstra. I
+                will gladly tell people what my programming style is, and I will even
+                tell them where I think their own style is unclear or makes me jump
+                through mental hoops. But I do this as a fellow programmer, not as the
+                Perl god. Some language designers hope to enforce style through various
+                typographical means such as forcing (more or less) one statement per
+                line. This is all very well for poetry, but I don't think I want to
+                force everyone to write poetry in Perl. Such stylistic limits should be
+                self-imposed, or at most policed by consensus among your buddies.
+
+         #  We do not all have to write like Faulkner, or program like Dijkstra. I will
+         #  gladly tell people what my programming style is, and I will even tell them
+         #  where I think their own style is unclear or makes me jump through mental
+         #  hoops. But I do this as a fellow programmer, not as the Perl god. Some
+         #  language designers hope to enforce style through various typographical means
+         #  such as forcing (more or less) one statement per line. This is all very well
+         #  for poetry, but I don't think I want to force everyone to write poetry in
+         #  Perl. Such stylistic limits should be self-imposed, or at most policed by
+         #  consensus among your buddies.
+
+        §natural-language-principles
+
+    my $in = $s1.lines.join(' ');
+
+   wrap-words($in                 ).&is: $s1, "Wraps with no indentation";
+   wrap-words($in, :indent(8)     ).&is: $s2, "Wraps with indentation of 8";
+   wrap-words($in, :prefix(' #  ')).&is: $s3, "Wraps with custom prefix";
+}
+
+subtest "Handles paragraph", {
+
+    my ($s1, $s2) = (q:to/§readme/, q:to/§reflowed/);
+        I want to build reliable software – software that works well, delights its
+        users, and that isn't subject to major security flaws.  To that end, I have two
+        beliefs (well, ok, I have _lots_ of beliefs, but two that I'd like to focus on
+        now):
+
+            * Software is more reliable when it's composed of small pieces, each of
+            which is responsible for [only one
+            task](https://en.wikipedia.org/wiki/Unix_philosophy).
+
+            * Software is difficult to reason about – and therefore dificult to build
+            well – when it has too many moving parts or systems become too big.
+
+        In many instances, these two beliefs complement one another.
+        §readme
+        I want to build reliable software – software that works well, delights its
+        users, and that isn't subject to major security flaws.  To that end, I have two
+        beliefs (well, ok, I have _lots_ of beliefs, but two that I'd like to focus on
+        now): * Software is more reliable when it's composed of small pieces, each of
+        which is responsible for [only one
+        task](https://en.wikipedia.org/wiki/Unix_philosophy). * Software is difficult to
+        reason about – and therefore dificult to build well – when it has too many
+        moving parts or systems become too big. In many instances, these two beliefs
+        complement one another.
+        §reflowed
+
+       wrap-words($s1, :keep-paragraphs).&is: $s1, ":keep-paragraphs preserves paragraphs and indention";
+       wrap-words($s1,                 ).&is: $s1, "Smart mode preserves paragraphs and indention";
+#       say wrap-words($s1, :prefix(' | '), :length(20), :keep-newlines                 );
+       wrap-words($s1, :reflow-all     ).&is: $s2, "Merges paragraphs with :reflow-all";
+
+}
+
+subtest "Handles lists", {
+
+    my ($s1, $s2) = (q:to/§changelog/, q:to/§numbered-list/);
+        + Changes:
+          + Make the `sprintf` method show its format string on error
+          + The `test` named parameter of the `dir` routine now handles Junctions
+          + Improve error message for the `X::Pragma::CannotPrecomp` exception
+        + Efficiency:
+          + Numerous small speed-ups and memory-related improvements
+        §changelog
+        1.  First item in a list with fairly long items that take up enough space in the
+        line to be worth wrapping.
+        2.  Second item in a list with fairly long items that take up enough space in
+        the line to be worth wrapping.
+        3.  Third item in a list with fairly long items that take up enough space in the
+        line to be worth wrapping.
+
+        Some text after that list
+        §numbered-list
+
+    wrap-words($s1, :keep-newlines  ).&is: $s1, "Keeps manual formatting with :keep-newlines";
+    wrap-words($s1                  ).&is: $s1, "Smart mode handles a simple bulleted list with '+' ";
+    wrap-words($s1.trans('+' => '*')).&is: $s1.trans('+' => '*'),
+                                               "Smart mode handles a simple bulleted list with '*' ";
+    wrap-words($s1.trans('+' => '-')).&is: $s1.trans('+' => '-'),
+                                               "Smart mode handles a simple bulleted list with '-' ";
+#      say wrap-words $s2;
+     #    my $t = "1.  First item in a list with fairly long items that take up enough space in the line to be worth wrapping."
+     #        ~ "\n2.  Second item in a list with fairly long items that take up enough space in the line to be worth wrapping.";
+
+     #        say $t;
+     #       say wrap-words $t;
+}

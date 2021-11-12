@@ -1,0 +1,101 @@
+use Test;
+use _;
+
+# subtest "Smart mode intermediate cases", {
+#     my $s1 = q:to/§err/;
+#         &wrap-words was called with inconsistent arguments:
+
+#              :keep-newlines
+#              :reflow
+
+#         Each of these arguments sets the wrap mode to use for the text, and &wrap-words
+#         cannot be in more than one mode.  For more info on wrap modes, please see the
+#         Line::Wrap README.
+#         §err
+
+#     wrap-words($s1).&is: $s1, "Smart mode keeps short manually ended lines";
+# }
+
+# subtest "Handles indented paragraphs", {
+#     my ($s1, $s2) = q:to/§POST-docs/, q:to/§PRE-docs/;
+#         Asserts a postcondition at every block entry. Runs after the LEAVE phase.
+
+#             For phasers such as KEEP and POST that are run when exiting a scope
+#             normally, the return value (if any) from that scope is available as the
+#             current topic within the phaser.
+
+#         The POST block can be defined in one of two ways. Either the corresponding POST
+#         is defined as a separate phaser, in which case PRE and POST share no lexical
+#         scope.
+#         §POST-docs
+
+#         Asserts a precondition at every block entry. Runs before the ENTER phase.
+
+#             PRE phasers fire off before any ENTER or FIRST.
+
+#             The exceptions thrown by failing PRE and POST phasers cannot be caught by a
+#         CATCH in the same block, which implies that POST phaser are not run if a PRE
+#         phaser fails.
+#         §PRE-docs
+
+#     wrap-words($s1).&is: $s1, "Preserves indented paragraphs";
+#     wrap-words($s2).&is: $s2, "Preserves initial indent";
+#     wrap-words($s2, :reflow-all).say;
+#   }
+
+# subtest "Handles starting and ending newlines", {
+
+#     my $s = q:to/§readme/;
+#         I want to build reliable software – software that works well, delights its
+#         users, and that isn't subject to major security flaws.
+
+#         To that end, I have two
+#         beliefs (well, ok, I have _lots_ of beliefs, but two that I'd like to focus on
+#         now):
+
+#             * Software is more reliable when it's composed of small pieces, each of
+#             which is responsible for only one task
+#             * Software is difficult to reason about – and therefore dificult to build
+#             well – when it has too many moving parts or systems become too big
+#         §readme
+#     #my $s = "\n\n\n            This is\n    a string      with\n\n\nnewines\nSome are\nat the start  \nothers are at the end\n\n";
+#     #dd wrap-words $s;
+
+#     #dd $s;
+#     # say $s;
+#     # note "orig ^^^^";
+#     # #dd $s;
+#     # say wrap-words $s, :length(70);
+#     # note ":len(70) :smart ^^^^";
+
+
+#     # say wrap-words $s, :length(70):keep-nl;
+#     # note ":len(70) :keep-nl ^^^^";
+#     # # say wrap-words $s, :!keep-paragraphs, :keep-nl,:length(70);
+#     # # note "!paragraphs :hard  ^^^^";
+#     # say wrap-words $s, :keep-paragraphs;
+#     # note ":keep-paragraphs ^^^^";
+
+# }
+
+subtest "Handles basic wide Unicode", {
+    my ($s1, $s2) = (q:to/§wide/, q:to/§hani/);
+0 1 2 3 4 5 6 7 8 9 10 11 12
+０ １ ２ ３ ４ ５ ６ ７ ８ ９
+ａ Ｂ Ｃ Ｄ Ｅ Ｆ Ｇ Ｈ Ｉ Ｊ
+Ｋ Ｌ Ｍ Ｎ Ｏ Ｐ Ｑ Ｒ Ｓ Ｔ
+Ｕ Ｖ Ｗ Ｘ Ｙ Ｚ ａ ｂ ｃ ｄ
+ｅ ｆ ｇ ｈ ｉ ｊ ｋ ｌ ｍ ｎ
+ｏ ｐ ｑ ｒ ｓ ｔ ｕ ｖ ｗ ｘ
+ｙ ｚ
+§wide
+    泰然自若 to stay clam down . . . . . . .
+    日月星辰 the sun, the moon and stars . .
+    按部就班 to do things in logical order .
+    四海兄弟 friends all around the world. .
+    心想事成 all wishes come true. . . . . .
+    §hani
+
+    wrap-words($s1.lines.join(' ') ~"\n", :length(30)).&is: $s1, "Handles basic wide unicode";
+    wrap-words($s2.lines.join(' ') ~"\n", :length(40)).&is: $s2, "Handles characters from the Han script";
+}
