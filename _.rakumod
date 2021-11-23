@@ -1,5 +1,6 @@
 need Self::Recursion;
 need Text::Wrap;
+need Text::Paragraphs;
 
 class X::Import::InvalidPos is X::Import::Positional {
     has @.valid;
@@ -10,8 +11,10 @@ class X::Import::InvalidPos is X::Import::Positional {
     }
 }
 
-my %modules = ('Self::Recursion' => Recursion::EXPORT::DEFAULT::.pairs.Hash,
-               'Line::Wrap'      => Wrap::EXPORT::DEFAULT::.pairs.Hash);
+my %modules = ('Self::Recursion'  => Recursion::EXPORT::DEFAULT::.pairs.Hash,
+               'Text::Wrap'       => Wrap::EXPORT::DEFAULT::.pairs.Hash,
+               'Text::Paragraphs' => Paragraphs::EXPORT::DEFAULT::.pairs.Hash
+              );
 
 sub EXPORT(*@package-subset)  {
     when @package-subset ⊈ %modules.keys {

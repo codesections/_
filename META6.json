@@ -12,7 +12,8 @@
   "provides" : {
       "_": "_.rakumod",
       "Self::Recursion": "Self/Recursion.rakumod",
-      "Text::Wrap": "Text/Wrap.rakumod"
+      "Text::Wrap": "Text/Wrap.rakumod",
+      "Text::Paragraphs": "Text/Paragraphs.rakumod"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",

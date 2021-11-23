@@ -41,7 +41,6 @@ subtest "Wraps line to various lengths", {
         wrap-words($s30, :length(80)).&is: $s80, "Wraps basic text up to 80 chars";
 
         wrap-words($s30, :length(80), :keep-newlines).&is: $s30, "Only wraps long lines with :keep-newlines";
-
         wrap-words("\n" ~$in, :length(80)).&is: $s80, "Wraps basic text that starts with a ␤";
 }
 
@@ -115,7 +114,6 @@ subtest "Handles paragraph", {
 
        wrap-words($s1, :keep-paragraphs).&is: $s1, ":keep-paragraphs preserves paragraphs and indention";
        wrap-words($s1,                 ).&is: $s1, "Smart mode preserves paragraphs and indention";
-#       say wrap-words($s1, :prefix(' | '), :length(20), :keep-newlines                 );
        wrap-words($s1, :reflow-all     ).&is: $s2, "Merges paragraphs with :reflow-all";
 
 }
@@ -146,10 +144,5 @@ subtest "Handles lists", {
                                                "Smart mode handles a simple bulleted list with '*' ";
     wrap-words($s1.trans('+' => '-')).&is: $s1.trans('+' => '-'),
                                                "Smart mode handles a simple bulleted list with '-' ";
-#      say wrap-words $s2;
-     #    my $t = "1.  First item in a list with fairly long items that take up enough space in the line to be worth wrapping."
-     #        ~ "\n2.  Second item in a list with fairly long items that take up enough space in the line to be worth wrapping.";
-
-     #        say $t;
-     #       say wrap-words $t;
+    wrap-words($s2).&is: $s2,                  "Wraps long bulleted list with numerals";
 }
