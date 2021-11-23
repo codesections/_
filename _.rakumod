@@ -1,4 +1,5 @@
 need Self::Recursion;
+need Print::Dbg;
 need Text::Wrap;
 need Text::Paragraphs;
 
@@ -12,6 +13,7 @@ class X::Import::InvalidPos is X::Import::Positional {
 }
 
 my %modules = ('Self::Recursion'  => Recursion::EXPORT::DEFAULT::.pairs.Hash,
+               'Print::Dbg'       => Dbg::EXPORT::DEFAULT::.pairs.Hash,
                'Text::Wrap'       => Wrap::EXPORT::DEFAULT::.pairs.Hash,
                'Text::Paragraphs' => Paragraphs::EXPORT::DEFAULT::.pairs.Hash
               );

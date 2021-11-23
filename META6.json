@@ -11,6 +11,7 @@
   "perl" : "6.d",
   "provides" : {
       "_": "_.rakumod",
+      "Print::Dbg": "Print/Dbg.rakumod",
       "Self::Recursion": "Self/Recursion.rakumod",
       "Text::Wrap": "Text/Wrap.rakumod",
       "Text::Paragraphs": "Text/Paragraphs.rakumod"
