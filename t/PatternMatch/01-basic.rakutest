@@ -1,0 +1,50 @@
+use Test;
+
+use Pattern::Match;
+
+plan 2;
+subtest "Handles basic patterns", {
+    my @users = [ { :name<Alice> },
+                  { :name<Bob>, :logged-in },
+                  { :name<Eve>, :logged-in, :dob(Date.new: now) } ];
+    my &matcher = {
+        choose -> :$logged-in!, :$name,
+                  :$dob! where .day-of-year ~~
+                         Date.new(now).day-of-year  { "birthday"   },
+               -> :$logged-in!, :$name              { "logged-in"  },
+               -> :$name                            { "logged-out" },
+               -> |                                 { 'default'    }}
+    my @results = @users.map: &matcher;
+    @results[0].&is: "logged-out", "Matches User 0";
+    @results[1].&is: "logged-in",  "Matches User 1";
+    @results[2].&is: "birthday",   "Matches User 2";
+
+    ok @users.pick(3).map(&matcher) ≡ <logged-out birthday logged-in>, "Order doen't effect the number of matches";
+    matcher('Tom').&is: 'default', 'Uses default case'; }
+
+subtest "Handles basic unreachable paterns & non-matches", {
+    my &matcher = { choose -> 400 { "bad-request" },
+                           -> 404 { "not-found"   } }
+
+    (404, 400).map(&matcher).&is-deeply: <not-found bad-request>, "Valid matches work";
+    { matcher 418 }.&throws-like: X::PatternMatch::NoMatch,       "Non-matches throw correctly";
+
+    throws-like { given 404 { choose -> Int $status-code { $status-code },
+                                     -> 404              { 'not-found'    }}},
+                X::PatternMatch::Unreachable,
+                "Basic unreachable errors throw";
+
+    throws-like { given 404, 88 {  choose -> Int $status-code, Int $user-id { $status-code },
+                                          -> 404, Int $user-id              { 'not-found'    }}},
+                X::PatternMatch::Unreachable,
+                "Unreachable error 2 throw";
+
+    given 404 { (choose -> 500 { 'OK'},
+                        -> 404 { 'not-found' }).&is: 'not-found',
+                                                     "Different literals don't shaddow each other" }
+
+    todo "Introspection based on where clauses NYI";
+    throws-like { given 404 { choose -> $ where 400..500 { 'client-error' },
+                                     -> 404              { 'not-found'    }}},
+                X::PatternMatch::Unreachable,
+                "Handles more complex signature shadowing"; }

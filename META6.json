@@ -14,7 +14,8 @@
       "Print::Dbg": "Print/Dbg.rakumod",
       "Self::Recursion": "Self/Recursion.rakumod",
       "Text::Wrap": "Text/Wrap.rakumod",
-      "Text::Paragraphs": "Text/Paragraphs.rakumod"
+      "Text::Paragraphs": "Text/Paragraphs.rakumod",
+      "Pattern::Match": "Pattern/Match.rakumod"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",
@@ -24,6 +25,7 @@
   "tags" : [
     "micro",
     "bundle",
+    "lowbar",
     "_",
     "metapackage"
   ],
