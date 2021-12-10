@@ -1,0 +1,19 @@
+use Test;
+
+plan 2;
+subtest "Importing with 'use'", {
+    { use _;
+      &paragraphs.&isa-ok: Code, "_ exports \&paragraphs" }
+    { use _ <&paragraphs>;
+      &paragraphs.&isa-ok: Code, "_ allows selective use of \&paragraphs" }
+    { use Text::Paragraphs;
+      &paragraphs.&isa-ok: Code, "Text::Paragraphs exports \&paragraphs" }
+}
+
+
+subtest "Importing with 'require'", {
+    { require _;
+      &_::paragraphs.&isa-ok: Code, "_ exposes \&_::paragraphs" }
+    { require Text::Paragraphs;
+      &Text::Paragraphs::paragraphs.&isa-ok: Code, "Text::Paragraphs exposes \&Text::Paragraphs::paragraphs" }
+}

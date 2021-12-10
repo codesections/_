@@ -2,14 +2,9 @@ use Test;
 
 unit sub MAIN(Bool :b(:$bench), :r(:$runs)=1000);
 
-subtest "Can use ok", {
-use-ok      '_',                    "Full import works";
-use-ok      '_ <Self::Recursion>',  "Submodule-only import works";
-throws-like {EVAL q[ use _ <SR> ]}, X::Import::Positional,
-                                    "Invalid submodules throw" }
 
-use _;
-{ sub countdown($seconds) { if $seconds ≥ 0 { "$seconds…", |(&_($seconds - 1)) }
+{ use _;
+  sub countdown($seconds) { if $seconds ≥ 0 { "$seconds…", |(&_($seconds - 1)) }
                             else            { "BLASTOFF!" } }
 
   countdown(5).&is-deeply: <5… 4… 3… 2… 1… 0… BLASTOFF!>,
@@ -17,7 +12,8 @@ use _;
 }
 
 
-{ proto count-up(|){{*}}
+{ use _ <&_>;
+  proto count-up(|){{*}}
   multi count-up(Int)                            { "Ok, buster, you're in trouble now!" }
   multi count-up(Int $one-two-three where * ≤ 3) { $one-two-three, |&_($one-two-three + 1)  }
 
@@ -25,7 +21,8 @@ use _;
                                            "Basic multi recurses";
 }
 
-{ multi fib(0) { 0 }
+{ use Self::Recursion;
+  multi fib(0) { 0 }
   multi fib(1) { 1 }
   multi fib($n where * > 0) { &_($n-1) + &_($n-2) }
 
@@ -33,7 +30,9 @@ use _;
 }
 
 
-if $bench {
+if not $bench {skip "benchmark test (run it with -b)", 1}
+else {
+    use _;
     my @a;
     sub simple-fn($n) { @a.push($n);
                         &_($n - 1) if $n > 0 }
@@ -45,3 +44,5 @@ if $bench {
                                          "Deep regression returns correct results";
     diag "Ran $runs calls in &sprintf('%.3f', now - $start-time) seconds";
 }
+
+plan 4;

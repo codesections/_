@@ -1,5 +1,5 @@
 use Text::Paragraphs;
-unit module Wrap;
+unit module Text::Wrap;
 
 role WrapMode {};  class KeepParagraphs does WrapMode {};
                    class KeepNewlines   does WrapMode {};
@@ -26,9 +26,10 @@ sub wrap-paragraph(Str $_, :$max-len, :$prefix) {
     $paragraph-prefix ~([''], |@words).reduce(&wrap-words-to-lines).join("\n") ~ $<postfix>
 }
 
+our proto wrap-words(|) is export  {*}
 multi wrap-words( Str $_, Int :length($max-len)=80, Int :$indent=0, Str :$prefix=' 'x $indent,
                   |modes (Bool :$keep-paragraphs=False, Bool :$reflow-all=False, Bool :$keep-newlines=False)
-                  --> Str:D) is export {
+                  --> Str:D) {
     PRE { only_one_mode_allowed:               $keep-newlines + $keep-paragraphs + $reflow-all ≤ 1 }
     PRE { cannot_set_both_indent_and_prefix:   $indent == 0 or ' 'x $indent eq $prefix             }
     my WrapMode $mode = do with modes.hash.head.key // <KeepParagraphs> { ::(.split('-')».tc.join) }

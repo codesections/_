@@ -1,0 +1,19 @@
+use Test;
+
+plan 2;
+subtest "Importing with 'use'", {
+    { use _;
+      &dbg.&isa-ok: Code, "_ exports \&dbg" }
+    { use _ <&dbg>;
+      &dbg.&isa-ok: Code, "_ allows selective use of \&dbg" }
+    { use Print::Dbg;
+      &dbg.&isa-ok: Code, "Print::Dbg exports \&dbg" }
+}
+
+
+subtest "Importing with 'require'", {
+    { require _;
+      &_::dbg.&isa-ok: Code, "_ exposes \&_::dbg" }
+    { require Print::Dbg;
+      &Print::Dbg::dbg.&isa-ok: Code, "Print::Dbg exposes \&Print::Dbg::dbg" }
+}

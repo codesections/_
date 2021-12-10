@@ -1,5 +1,6 @@
 use _;
 use Test;
+plan 3;
 
 sub tmp-file(:(:$_ = $?FILE.IO)) {
     "test-data.from.{.parent.basename}.{.basename}.ln$(callframe(1).line.Str).txt" }

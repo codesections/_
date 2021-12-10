@@ -1,0 +1,24 @@
+use Test;
+
+plan 4;
+my Str @exported-fns = <&wrap-words &dbg &choose &paragraphs &term:<&_>>;
+
+subtest "Can use _ ok", {
+    use-ok      '_',                    "Full import works";
+    use _;
+    ok MY::<&wrap-words>, 'use _ provides &wrap-words';
+    ok MY::<&dbg>,        'use _ provides &dbg';
+    ok MY::<&choose>,     'use _ provides &choose';
+    ok MY::<&paragraphs>, 'use _ provides &paragraphs';
+    ok MY::<&term:<&_>>,  'use _ provides &term:<&_>';
+
+}
+
+subtest "Selective imports of single fn", {
+   use-ok "_ <$_>", "Can selectivly import '$_'"  for @exported-fns }
+
+subtest "Selective imports of many random fns", {
+    for @exported-fns.combinations(1..*).pick(5) {
+        use-ok "_ <$_>", "Can selectivly import '$_'" }}
+
+throws-like {EVAL q[ use _ <SR> ]}, X::Import::Positional, "Invalid submodules throw";

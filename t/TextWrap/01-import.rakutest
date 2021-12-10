@@ -1,0 +1,19 @@
+use Test;
+
+plan 2;
+subtest "Importing with 'use'", {
+    { use _;
+      &wrap-words.&isa-ok: Code, "_ exports \&wrap-words" }
+    { use _ <&wrap-words>;
+      &wrap-words.&isa-ok: Code, "_ allows selective use of \&wrap-words" }
+    { use _;
+      &wrap-words.&isa-ok: Code, "Text::Wrap exports \&wrap-words" }
+}
+
+
+subtest "Importing with 'require'", {
+    { require _;
+      &_::wrap-words.&isa-ok: Code, "_ exposes \&_::wrap-words" }
+    { require Text::Wrap;
+      &Text::Wrap::wrap-words.&isa-ok: Code, "Text::Wrap exposes \&_::wrap-words" }
+}

@@ -1,4 +1,4 @@
-unit module Match;
+unit module Pattern::Match;
 
 class X::PatternMatch::Unreachable is Exception is export {
     has Signature $.shadowed is required;
@@ -37,7 +37,8 @@ sub shadows(&prior-fn, &cur-fn) {
          && &prior-fn.&signature-with-literals ~~ &cur-fn.signature
 }
 
-our sub choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) == +$_)  is export {
+our proto choose(|) is export {*}
+multi choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) == +$_) {
     my (Bool $match, Mu $return-val);
     for @fns -> &f {
         if @fns[$++^..*].first({.&shadows: &f}) -> $_ {

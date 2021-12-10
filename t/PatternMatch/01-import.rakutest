@@ -1,0 +1,19 @@
+use Test;
+
+plan 2;
+subtest "Importing with 'use'", {
+    { use _;
+      &choose.&isa-ok: Code, "_ exports \&choose" }
+    { use _ <&choose>;
+      &choose.&isa-ok: Code, "_ allows selective use of \&choose" }
+    { use Pattern::Match;
+      &choose.&isa-ok: Code, "Pattern::Match exports \&choose" }
+}
+
+
+subtest "Importing with 'require'", {
+    { require _;
+      &_::choose.&isa-ok: Code, "_ exposes \&_::choose" }
+    { require Pattern::Match;
+      &Pattern::Match::choose.&isa-ok: Code, "Pattern::Match exposes \&Pattern::Match::choose" }
+}

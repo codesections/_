@@ -1,4 +1,0 @@
-use Test;
-use _;
-
-say wrap-words "", :keep-nl, :keep-paragraphs;

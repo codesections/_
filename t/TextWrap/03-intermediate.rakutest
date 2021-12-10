@@ -1,5 +1,6 @@
 use Test;
 use _;
+plan 1;
 
 # subtest "Smart mode intermediate cases", {
 #     my $s1 = q:to/§err/;

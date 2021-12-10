@@ -1,6 +1,7 @@
 use Test;
 use _;
 
+plan 4;
 subtest "Wraps line to various lengths", {
     my ($s80, $s72, $s60, $s30) = q:to/§end/.split("\n\n");
         A naive word wrapper intended to be used for aligning error messages. Naive in

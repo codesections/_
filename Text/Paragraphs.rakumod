@@ -1,4 +1,4 @@
-unit module Paragraphs;
+unit module Text::Paragraphs;
 
 my token bullet        { [@(<- + *>) | [ \d\d? '.' ]] \s*  }
 my token non-bullet    { <-[- + *] - [\d]> }
@@ -8,7 +8,7 @@ my token blank-line    { ^^        \h* [\n | $ ] }
 my token rest-of-line  {           \N* [\n | $ ] }
 my token continuation-line($indent) { \h ** {$indent} [\S & <non-bullet>] <rest-of-line> }
 
-proto paragraphs($s, Bool :$chomp, :$limit --> Seq) is export {*}
+our proto paragraphs(|) is export {*}
 
 multi paragraphs(Str $_, :$chomp=True, :$limit is copy =∞, :(:$pos is copy = 0) --> Seq()) {
     gather until $pos ≥ .chars or $limit-- ≤ 0 {

@@ -1,0 +1,20 @@
+use Test;
+
+plan 2;
+subtest "Importing with 'use'", {
+    { use _;
+      &_.&isa-ok: Code, "_ exports \&_" }
+    { use _ <&_>;
+      &_.&isa-ok: Code, "_ allows selective use of \&_" }
+    { use Self::Recursion;
+      &_.&isa-ok: Code, "Self::Recursion exports \&_" }
+}
+
+
+subtest "Importing with 'require'", {
+    { require _;
+      &_::_.&isa-ok: Code, "_ exposes \&_::_" }
+    { require Self::Recursion;
+      # Note: When importing directly from Self::Recursion, the &term:<&_> full-name is required
+      &Self::Recursion::term:<&_>.&isa-ok: Code, "Self::Recursion exposes \&Self::Recursion::term:<&_>" }
+}

@@ -1,16 +1,13 @@
 use Test;
 use _;
+plan 10;
 
 do {
-    my class Sink is IO::Handle { has $.text;
-        method WRITE($_) { $!text = .decode andthen True }
-        method gist      { $!text }
-        method Str       { $!text }
-        submethod TWEAK  { self.encoding: 'utf8'}
-    }
+    # Bind $*OUT so we can check printed output
+    temp $*ERR = my $msg = new(
+        class { has $!txt handles <Str gist raku>;
+                method print(+a) { $!txt = a.join }}:);
 
-    my $msg = Sink.new;
-    my $*ERR = $msg;
     my token file { '[' $($?FILE.IO.basename) ':' \d+ ']' <.ws> }
 
     dbg(my Int $i = 42).&is-deeply: 42,                       'Returns an Int argument';
