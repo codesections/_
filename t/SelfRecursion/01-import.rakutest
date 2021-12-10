@@ -12,8 +12,6 @@ subtest "Importing with 'use'", {
 
 
 subtest "Importing with 'require'", {
-    { require _;
-      &_::_.&isa-ok: Code, "_ exposes \&_::_" }
     { require Self::Recursion;
       # Note: When importing directly from Self::Recursion, the &term:<&_> full-name is required
       &Self::Recursion::term:<&_>.&isa-ok: Code, "Self::Recursion exposes \&Self::Recursion::term:<&_>" }

@@ -12,8 +12,6 @@ subtest "Importing with 'use'", {
 
 
 subtest "Importing with 'require'", {
-    { require _;
-      &_::wrap-words.&isa-ok: Code, "_ exposes \&_::wrap-words" }
     { require Text::Wrap;
       &Text::Wrap::wrap-words.&isa-ok: Code, "Text::Wrap exposes \&_::wrap-words" }
 }

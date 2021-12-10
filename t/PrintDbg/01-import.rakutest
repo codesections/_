@@ -12,8 +12,6 @@ subtest "Importing with 'use'", {
 
 
 subtest "Importing with 'require'", {
-    { require _;
-      &_::dbg.&isa-ok: Code, "_ exposes \&_::dbg" }
     { require Print::Dbg;
       &Print::Dbg::dbg.&isa-ok: Code, "Print::Dbg exposes \&Print::Dbg::dbg" }
 }

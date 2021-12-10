@@ -1,30 +1,38 @@
 need Self::Recursion;
-constant &_ = &Self::Recursion::term:<&_>;
 need Print::Dbg;
-constant &dbg = &Print::Dbg::dbg;
 need Pattern::Match;
-constant &choose = &Pattern::Match::choose;
 need Text::Paragraphs;
-constant &paragraphs = &Text::Paragraphs::paragraphs;
 need Text::Wrap;
-constant &wrap-words = &Text::Wrap::wrap-words;
+need Test::Fluent;
+
+my constant &_ = &Self::Recursion::term:<&_>;
+
+
+my constant @default-export-pairs = ('&term:<&_>'  => &Self::Recursion::term:<&_>,
+                                     '&dbg'        => &Print::Dbg::dbg,
+                                     '&choose'     => &Pattern::Match::choose,
+                                     '&paragraphs' => &Text::Paragraphs::paragraphs,
+                                     '&wrap-words' => &Text::Wrap::wrap-words);
+
+my constant @test-fluent-exports = <&plan &done-testing &subtest &diag &skip-rest &bail-out>;
+
+package EXPORT::DEFAULT { OUR::{.key} := .value           for @default-export-pairs }
+package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports  }
+package EXPORT::ALL     { OUR::{.key} := .value           for @default-export-pairs;
+                          OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports}
 
 class X::Import::InvalidPos is X::Import::Positional {
-    has %.exports;
-    has $.invalid;
+    has %.exports;  has $.invalid;
     method message {
         "Error while importing from '_':\n"
         ~ “Cannot import '$(+$.invalid == 1 ?? $.invalid !! "($.invald.join(", "))")' from _.\n”
-        ~"_ exports:\n" ~@.exports.keys.join("\n").indent(4)
-    }
+        ~"_ exports:\n" ~%.exports.keys.join("\n").indent(4) }
 }
 
-
-
-
-multi EXPORT(*%n)  { ('&term:<&_>' => &Self::Recursion::term:<&_>, |OUR.kv).Map }
-multi EXPORT(*@requested-symbols, *%n) {
-    my %exports = (|OUR::.pairs, '&term:<&_>' => &_);
+proto EXPORT(|) {*}
+multi EXPORT { %().Map}
+multi EXPORT(*@requested-symbols where * > 0, *%n) {
+    my %exports = (|OUR::EXPORT::ALL::.pairs, '&term:<&_>' => &_);
     my (@valid, @invalid);
     for @requested-symbols.map({ $_ eq '&_' ?? '&term:<&_>' !! $_}) -> $sym {
         if %exports{$sym}:p -> $_ { @valid.push:   $_   }
@@ -32,36 +40,3 @@ multi EXPORT(*@requested-symbols, *%n) {
     when ?@invalid { die X::Import::InvalidPos.new: :%exports:@invalid}
     default        { @valid.Map }
 }
-
-
-    # when @package-subset ⊈ %modules.keys {
-    #     die X::Import::InvalidPos.new: :source-package<_>:valid(%modules.keys)
-    # }
-    #%modules{@package-subset || *}».List.flat.Map
-
-    # my @symbols = @wants.map(&add-matching-sigil);
-    # my %exports is Set = |OUR::.keys, '&term:<&_>';
-    # if @symbols.grep({not %exports{$_}}) -> $invalid {
-    #     die X::Import::InvalidPos.new: :source-package<_>:%exports:$invalid }
-
-    # say @symbols;
-    # say OUR::.keys;
-    # say  OUR::{@symbols}:kv;
-    #(OUR::{@symbols}:kv).Map
-
-# sub add-matching-sigil($_) {
-#     when '&_'               { '&term:<&_>'}
-#     for <& $ % @> -> $sigil { when OUR::{$sigil ~ $_} { $sigil ~ $_}}
-#     default                 { $_ }}
-# sub to-symbol-pair($_) {
-#     when '&_'               { '&term:<&_>' => &Self::Recursion::term:<&_> }
-#     for <& $ % @> -> $sigil { if OUR::{"$sigil$_"} -> \sym  { return "$sigil$_" => sym }}
-#     default                 {
-#         die X::Import::InvalidPos.new: :source-package<_>:exports(:TODO):invalid($_)
-#     }}
-
-# my %modules = ('Self::Recursion'  => Self::Recursion::EXPORT::DEFAULT::.pairs.Hash,
-#                'Print::Dbg'       => Print::Dbg::EXPORT::DEFAULT::.pairs.Hash,
-#                'Pattern::Match'   => Pattern::Match::EXPORT::DEFAULT::.pairs.Hash,
-#                'Text::Wrap'       => Text::Wrap::EXPORT::DEFAULT::.pairs.Hash,
-#                'Text::Paragraphs' => Text::Paragraphs::EXPORT::DEFAULT::.pairs.Hash);

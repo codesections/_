@@ -12,8 +12,6 @@ subtest "Importing with 'use'", {
 
 
 subtest "Importing with 'require'", {
-    { require _;
-      &_::choose.&isa-ok: Code, "_ exposes \&_::choose" }
     { require Pattern::Match;
       &Pattern::Match::choose.&isa-ok: Code, "Pattern::Match exposes \&Pattern::Match::choose" }
 }

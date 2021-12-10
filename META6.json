@@ -12,10 +12,12 @@
   "provides" : {
       "_": "_.rakumod",
       "Print::Dbg": "Print/Dbg/Dbg.rakumod",
+      "Pattern::Match": "Pattern/Match/Match.rakumod",
       "Self::Recursion": "Self/Recursion/Recursion.rakumod",
       "Text::Wrap": "Text/Wrap/Wrap.rakumod",
       "Text::Paragraphs": "Text/Paragraphs/Paragraphs.rakumod",
-      "Pattern::Match": "Pattern/Match/Match.rakumod"
+      "Test::Fluent":     "Test/Fluent/Fluent.rakumod"
+
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",

@@ -96,7 +96,7 @@ subtest "Handles basic wide Unicode", {
     四海兄弟 friends all around the world. .
     心想事成 all wishes come true. . . . . .
     §hani
-
+say &wrap-words;;
     wrap-words($s1.lines.join(' ') ~"\n", :length(30)).&is: $s1, "Handles basic wide unicode";
     wrap-words($s2.lines.join(' ') ~"\n", :length(40)).&is: $s2, "Handles characters from the Han script";
 }

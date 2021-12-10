@@ -1,0 +1,17 @@
+use _ :Test;
+
+plan 6;
+#| Basic addition doesn't return incorrect value
+{ 5 + 11 }.is.not.like(/18/);
+#| Basic addition doesn't return incorrect value
+{ 5 + 11 }.isn't.like(/18/);
+#| Basic addition returns correct value
+{ 5 + 11 }.is.like(/16/);
+
+{ 'foo'.uc }.is('FOO');
+
+#| Basic addition returns correct value
+{ True}.is.true;
+
+#| .isn't works
+{5}.isn't.eqv: 51;

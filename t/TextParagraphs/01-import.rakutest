@@ -12,8 +12,6 @@ subtest "Importing with 'use'", {
 
 
 subtest "Importing with 'require'", {
-    { require _;
-      &_::paragraphs.&isa-ok: Code, "_ exposes \&_::paragraphs" }
     { require Text::Paragraphs;
       &Text::Paragraphs::paragraphs.&isa-ok: Code, "Text::Paragraphs exposes \&Text::Paragraphs::paragraphs" }
 }
