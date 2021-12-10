@@ -1,130 +1,120 @@
-# _
+# `_`
 
-`_` is a meta utility package that aggregates various small bits of Raku code that don't quite
-justify their own package but that nevertheless seem worth sharing.  In particular, `_` is home to
-subpackages that are:
+`_` (pronounced "lowbar") is a meta utility package for the [Raku](https://raku.org) programming
+language.  Being _meta_ means that `_` is comprised of independent sub-packages, each with their own
+documentation and tests.  Being a _utility_ package means that each of `_`'s sub-packages is
+provides some helper functionality — the type of functionality that, if it weren't in `_`, might
+live in a `./utils` directory or in a tiny module that would bloat your dependency tree.
+
+`_`'s goal is to provide you with utilities that are [correct by
+inspection](https://proofwiki.org/wiki/ProofWiki:Jokes#Proof_by_Inspection): that is, with code so
+simple that you can look at it and _tell_ that it is correct.  To achieve this goal, each `_`
+sub-package will always be:
 
   1. A single file (not counting tests/docs)
   2. With zero dependencies (not counting other `_` files or [core
      modules](https://docs.raku.org/language/modules-core))
   3. That's no more than 70 lines long
 
-If you have a package or script that meets those requirements and that you'd like to include, please
-feel free to open a PR.  (Or even if it slightly exceeds the requirements; I'm happy to be a bit
-flexible.)
+This means that you or any other Raku programmer can evaluate any `_` sub-package by opening a
+single file and reading a page of code.  If you have questions or concerns about any `_`
+sub-packages, I encourage you to do just that.
 
-## Pronunciation
+However, just because you can doesn't mean that you must: each `_` sub-package is also documented in
+the accompanying `README` file located in its directory.  Similarly, as valuable as "proof by
+inspection" my be, it's no substitute for tests. (Recall [Knuth's
+warning to a colleague](https://www-cs-faculty.stanford.edu/~knuth/faq.html): "Beware of bugs in the above code; I
+have only proved it correct, not tried it.**).  Accordingly, each sub-package also has its own tests.
 
-However you'd like, but I pronounce `_` in this libraries name as `&lowbar;`, just like [in
-HTML](https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references))
+**NOTE**: Once `_` has a production release, it will guarantee backwards compatibility.  However,
+`_` is currently beta software and does **not promise backwards compatibility**.
 
-## Installation and Usage
+For more information about `_`'s goals and plans, please see the [announcement blog
+post](https://raku-advent.blog/unix_philosophy_without_leftpad_part2).
 
-Install `_` with `$ zef install _:auth<github:codesections>`.  Once you have done so, you can import
-all of `_` with `use _;` or can selectively import sub packages by proving a list of the package
-names.  For example, `use _ <Self::Recursion Word::Wrap>;` would import only the `Self::Recursion`
-and `Word::Wrap` packages.
+## Installation
 
-## Current submodules
+Install `_` with `$ zef install _:auth<github:codesections>`.
 
-Currently, `_` includes the following submodules.  You can find more information about each one in
+## Usage
+
+To use `_`, you can import all of `_`'s exported functions with `use _`. This style of
+importing is intended for prototyping/experimentation when you are not which `_` functions you may use.
+
+Alternatively, you can selectively import exported functions (or other symbols) by passing their
+name to the `use _` statement.  For example, here's how you could import the `&dbg` function from
+the `Print::Dbg` sub-package and the `&wrap-words` function from the `Text::Wrap` sub-package:
+
+```raku
+use _ <&dbg &wrap-words>;
+```
+
+This style of imports is intended for later in the development process/when you want to ensure that
+`_` does not cause unexpected name clashes.
+
+## sub-packages
+
+`_` includes the following sub-packages.  You can find more information about each one in
 the `README` file in its directory.
 
-  * `Self::Recursion` - provides `&_` as an alias for `&?ROUTINE`
+  * `Pattern::Match` - pattern match with Raku's full destructuring from signature
+    binding. [README](./Pattern/Match/README.md); [src](./Pattern/Match/Match.rakumod)
 
+  * `Print::Dbg` - better print-line debugging than `.raku` or
+    `dd`. [README](./Print/Dbg/README.md); [src](./Print/Dbg/Dbg.rakumod)
 
-## What problem is `_` solving?
+  * `Self::Recursion` - provides `&_` as an alias for `&?ROUTINE` for anonymous self-recursion.
+    [README](./Self/Recursion/README.md); [src](./Self/Recursion/Recursion.rakumod)
 
-I want to build reliable software – software that works well, delights its users, and that isn't
-subject to major security flaws.  To that end, I have two beliefs (well, ok, I have _lots_ of
-beliefs, but two that I'd like to focus on now):
+  * `Text::Paragraphs` - provides a `paragraphs` function similar to
+    [`lines`](https://docs.raku.org/routine/lines) except that it breaks text up into paragraphs
+    rather than lines. [README](./Text/Paragraphs/README.md); [src](./Text/Paragraphs/Paragraphs.rakumod)
 
-    * Software is more reliable when it's composed of small pieces, each of which is responsible for
-      [only one task](https://en.wikipedia.org/wiki/Unix_philosophy)
+  * `Text::Wrap` - provides a `wrap-words` function that wraps text to a specified line length (a
+    better alternative to Rakudo's private `naive-word-wrapper`). [README](./Text/Wrap/README.md);
+    [src](./Text/Wrap/Wrap.rakumod)
 
-    * Software is difficult to reason about – and therefore dificult to build well – when it has too
-      many moving parts or systems become too big
+  * `Test::Doctest::Markdown` - tests Raku code blocks from `README`s or other markdown files and,
+    optionally, compares their output to `# OUTPUT: «…»`
+    comments. [README](./Test/Doctest/Markdown/README.md); [src](./Test/Doctest/Markdown/Markdown.md)
 
-In many instances, these two beliefs complement one another – keeping things simple will reduce the
-number of pieces it takes to build software _and_ will lower the complexity of each piece.  But
-there are obviously times when these two values trade off against each other.  We sometimes have to
-decide whether to one pretty big software "thing" or to combine many smaller and individually less
-complex alternatives.
+  * `Test::Fluent` - A thin wrapper over [Test](https://docs.raku.org/type/Test) that lets you
+    describe tests in [declarator
+    comments](https://docs.raku.org/language/pod#index-entry-declarator_blocks_#=) (`#|`) and to
+    more fluently chain test methods.[README](./Test/Fluent/README.md); [src](./Test/Fluent/Fluent.md)
 
-One area where this comes up a lot is in selecting the dependencies (libraries, modules, etc) to use
-in a project.  At one extreme, you can try to keep each dependency as small as possible, accepting
-that this will lead to many dependencies.  Or you can focus more on relying on fewer dependencies,
-even if that means some of them will be too large for you to deeply understand.
+## Contributing
 
-This isn't a theoretical question – different developers strike that balance in very different
-ways.  So do different programming language communities.
+You would be welcome to contribute to `_`'s development; you can help in any of the following ways:
 
-A [2020
-report](https://i.blackhat.com/USA-20/Wednesday/us-20-Edwards-The-Devils-In-The-Dependency-Data-Driven-Software-Composition-Analysis.pdf)
-found that the typical JavaScript application has 377 dependencies on open source libraries – and
-that 10% have over 1,400. That doesn't mean that JavaScript developers are manually installing
-hundreds of libraries; most of those were transitive dependencies, not direct ones. In a way,
-though, that makes it even worse: to fully understand that sort of application, the developer needs
-to not only understand every package they _chose_ to depend on but hundreds of others they didn't.
+  * by opening an issue
+    - to report a section of the documentation that you found unclear
+    - to report a bug in an existing sub-package
+    - to suggest a feature for an existing sub-package
+    - to suggest a new sub-package
+    - to discuss future plans for `_`/and of the
+      [questions from the announcement
+      post](https://raku-advent.blog/unix_philosophy_without_leftpad_part2#future_plans)
+  * by opening a pull request
+    - to improve the documentation
+    - to add tests for an exiting sub-package
+    - to fix a bug
+    - to add a feature for a sub-package
+    - to add a new sub-package
 
-On the other hand, the JavaScript packages are admirably small and single-purpose.  That same report
-showed that several of the most-depended-on packages JavaScript packages are tiny – one that 86% of
-JS programs use is [just four lines](https://github.com/juliangruber/isarray/blob/master/index.js)
-(its a polyfill for old browsers).  Pretty much anyone can look at those four lines and be sure that
-they don't contain any major bugs.
+  (For the last two, it'd probably be a good idea to mention your idea in an issue first; that's not
+  a requirement, but it might prevent you spending time of a feature that isn't a great fit for `_`).
 
-At the other end of the spectrum, the language with the fewest dependencies had an average of
-just 4.  Before we get too excited about that, though, I should note that the language in question
-is [Swift](https://en.wikipedia.org/wiki/Swift_(programming_language)) and that the report only
-covered _open source_ dependencies.  I don't have a citation, but I don't think it's a stretch to
-believe that the vast majority of Swift programs depend on a large volume of Apple code, much of
-which we can't look at even if we wanted to.
+  All `_` contributors agree to abide by the [Raku Code of
+  Conduct](https://raku.github.io/Raku-Steering-Council/papers/CoC).
 
-So it looks like we're faced with a spectrum of options, and both extremes are pretty frightening.
-At one extreme, you can end up with easy-to-comprehend libraries – but in an overwhelming quantity;
-at the other, a you get a manageable number of dependencies, but each one is giant enough to be
-pretty impenetrable without dedicated study.  Of course it's possible to avoid both extremes and
-settle somewhere in the middle.  But that risks a worst-of-both worlds outcome, where you have too
-many dependencies to realistically track *and* your individual dependencies are too large to fully
-comprehend.
+## Roadmap
 
-`_` is my attempt to help the Raku ecosystem strike a better balance between too-many-small
-libraries and libraries that are too large to deeply understand.  My hope is that aggregating many
-small and still independent libraries into `_` will play a role in reducing the average dependencies
-in a typical Raku program without adding anything so large that it defies easy understanding.
+My initial goal for `_` is to get it to a 1.0.0/stable release as soon as possible in order to
+provide guarantees regarding backwards compatibility.  To that end, my priority is to decide what
+`_`'s overall approach to versioning will be and to implement that system. The [announcement blog
+post](https://raku-advent.blog/unix_philosophy_without_leftpad_part2#versioning) has additional
+details about the versioning considerations.
 
-## Not a new idea
-
-Of course, creating this sort of utility library is hardly a new idea; I think programmers have been
-keeping a `./utils` directory for pretty much as long as they've had directories.  And, in
-particular, the same report I cited before also showed that 88% of JavaScript libraries depend on
-the [Lodash](https://lodash.com/) utility library.  (I'm aware of the similarity in name, though
-calling this `_`/Lowbar is less about homage to Lodash and more a case of convergent evolution; when
-a library isn't _about_ any one thing, it just makes sense to use the one non-alphabetic character
-available.  And, besides, the other obvious name, 'Utils', is [somewhat
-taken](https://github.com/Util)).
-
-As Lodash proves, a utility library like this is no panacea – JavaScript have a widely used utility
-library and _still_ has an explosion of other dependencies.  I'm well aware that it will take much
-more than `_` to have the low-dependency Raku ecosystem we'd like.
-
-But still, I'm optimistic that `_` can do bit more than Lodash and similar utility libraries for
-three reasons.  First, Lodash and other JS utility libraries have to work from the fairly small
-JavaScript standard library; many (most?) of the utilities they provide already built in with Raku.
-Our larger standard library frees libraries like this to have a bit broader of a focus, which should
-help increase the number of dependencies we can replace.
-
-Second, because many utility libraries are attempting to supplement the standard library, they
-typically put a lot of emphasis on developing a standard and coherent API – they're building a
-single library designed to be used as one coherent whole.  Since we're operating at a bit higher
-level – Raku's standard library is great; `_` is mostly about things that don't belong in Core – we
-have the freedom to let each sublibrary be a bit more individual.
-
-And, finally, we have the secret weapon of any Raku project – Raku itself.  I've said that `_`
-submodules should be under 70 lines.  That's so that each one can fit on a single page; you can
-literally look at all the code at one time.  That sort of global visibility is hugely empowering,
-but the brevity can also be limiting – there are, of course, limits to what you can achieve in a
-single page of code.  It's my belief that Raku's unrivaled expressiveness will let us fit far more
-onto a single, clearly written page of code than we could if writing in any other programming
-language.  If I'm right about that, then the range of problems that `_` can solve without losing
-it's comprehensibility is correspondingly expanded as well.
+Once `_` has a stable release, the plan is to focus on growing `_` to address other needs in the
+Raku ecosystem.

@@ -11,11 +11,11 @@
   "perl" : "6.d",
   "provides" : {
       "_": "_.rakumod",
-      "Print::Dbg": "Print/Dbg.rakumod",
-      "Self::Recursion": "Self/Recursion.rakumod",
-      "Text::Wrap": "Text/Wrap.rakumod",
-      "Text::Paragraphs": "Text/Paragraphs.rakumod",
-      "Pattern::Match": "Pattern/Match.rakumod"
+      "Print::Dbg": "Print/Dbg/Dbg.rakumod",
+      "Self::Recursion": "Self/Recursion/Recursion.rakumod",
+      "Text::Wrap": "Text/Wrap/Wrap.rakumod",
+      "Text::Paragraphs": "Text/Paragraphs/Paragraphs.rakumod",
+      "Pattern::Match": "Pattern/Match/Match.rakumod"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/codesections/_.git",
