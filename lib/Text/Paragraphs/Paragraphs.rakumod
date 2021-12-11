@@ -6,7 +6,8 @@ my token bullet-prefix { ^^ $<ws>=(\h*) <bullet> }
 my token indent-prefix { ^^        \h* }
 my token blank-line    { ^^        \h* [\n | $ ] }
 my token rest-of-line  {           \N* [\n | $ ] }
-my token continuation-line($indent) { \h ** {$indent} [\S & <non-bullet>] <rest-of-line> }
+my token continuation-line($indent) {
+                         \h ** {$indent} [\S & <non-bullet>] <rest-of-line> }
 
 our proto paragraphs(|) is export {*}
 
@@ -27,6 +28,7 @@ multi paragraphs(IO::Path   $p, :$chomp=True, :$limit=∞, :$enc = 'utf8', :$nl-
     my $handle = $p.open(:$enc:$nl-in) andthen LEAVE try .close;
     eager $handle.&paragraphs: :$chomp:$limit }
 multi paragraphs(IO::Handle $h, :$chomp=True, :$limit is copy =∞, :$close) {
+    # A limited bit of laziness (closser to &split's laziness than &lines)
     flat gather for $h.comb(/.*? [\n <blank-line> | $]/, :$close) {
         for .&paragraphs: :$chomp:$limit { $limit--; .take }
         last if $limit ≤ 0}
