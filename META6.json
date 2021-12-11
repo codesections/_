@@ -10,14 +10,14 @@
   "name" : "_",
   "perl" : "6.d",
   "provides" : {
-      "_": "_.rakumod",
-      "Print::Dbg": "Print/Dbg/Dbg.rakumod",
-      "Pattern::Match": "Pattern/Match/Match.rakumod",
-      "Self::Recursion": "Self/Recursion/Recursion.rakumod",
-      "Text::Wrap": "Text/Wrap/Wrap.rakumod",
-      "Text::Paragraphs": "Text/Paragraphs/Paragraphs.rakumod",
-      "Test::Doctest::Markdown":     "Test/Doctest/Markdown/Markdown.rakumod",
-      "Test::Fluent":     "Test/Fluent/Fluent.rakumod"
+      "_": "lib/_.rakumod",
+      "Print::Dbg": "lib/Print/Dbg/Dbg.rakumod",
+      "Pattern::Match": "lib/Pattern/Match/Match.rakumod",
+      "Self::Recursion": "lib/Self/Recursion/Recursion.rakumod",
+      "Text::Wrap": "lib/Text/Wrap/Wrap.rakumod",
+      "Text::Paragraphs": "lib/Text/Paragraphs/Paragraphs.rakumod",
+      "Test::Doctest::Markdown":     "lib/Test/Doctest/Markdown/Markdown.rakumod",
+      "Test::Fluent":     "lib/Test/Fluent/Fluent.rakumod"
 
   },
   "resources" : [ ],
