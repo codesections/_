@@ -101,3 +101,7 @@ for (:add(1, 5), :sub(9, 8), :mult(7, 7)) {
             { die "Unknown op: " ~@_                        })
 }
 ```
+
+In all of the examples above, `&choose` has matched against `$_` (the current topic), which is its
+default behavior.  But if you want it to match on some other value, you can pass that value with the
+`:on` named parameter.
