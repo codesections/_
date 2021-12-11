@@ -4,6 +4,7 @@ need Pattern::Match;
 need Text::Paragraphs;
 need Text::Wrap;
 need Test::Fluent;
+need Test::Doctest::Markdown;
 
 my constant &_ = &Self::Recursion::term:<&_>;
 
@@ -15,10 +16,13 @@ my constant @default-export-pairs = ('&term:<&_>'  => &Self::Recursion::term:<&_
                                      '&wrap-words' => &Text::Wrap::wrap-words);
 
 my constant @test-fluent-exports = <&plan &done-testing &subtest &diag &skip-rest &bail-out>;
+my constant @test-doctest-exports = <&doctest>;
 
 package EXPORT::DEFAULT { OUR::{.key} := .value           for @default-export-pairs }
-package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports  }
+package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports;
+                          OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports; }
 package EXPORT::ALL     { OUR::{.key} := .value           for @default-export-pairs;
+                          OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports;
                           OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports}
 
 class X::Import::InvalidPos is X::Import::Positional {

@@ -16,6 +16,7 @@
       "Self::Recursion": "Self/Recursion/Recursion.rakumod",
       "Text::Wrap": "Text/Wrap/Wrap.rakumod",
       "Text::Paragraphs": "Text/Paragraphs/Paragraphs.rakumod",
+      "Test::Doctest::Markdown":     "Test/Doctest/Markdown/Markdown.rakumod",
       "Test::Fluent":     "Test/Fluent/Fluent.rakumod"
 
   },

@@ -1,0 +1,28 @@
+use _ :Test;
+plan 2;
+
+my $test-md = q:to/§md/;
+    # Test markdown file
+
+    Some content. And some more.  And then,
+    maybe, an example:
+
+    ```raku
+       say 5 + 37;    # OUTPUT: «42»
+       say 'snafu'.uc # OUTPUT: «SNAFU»
+    ```
+
+    See how that worked? the text after the example asks.
+
+    If not, maybe this example will help?
+    ```raku
+    sub no-output($a) { "this function isn't called"}
+    ```
+
+    See what I mean?
+    §md
+
+
+
+
+doctest($test-md);

@@ -1,17 +1,23 @@
 use _ :Test;
 
-plan 6;
-#| Basic addition doesn't return incorrect value
+plan 7;
+
+#| .is.not.like passes with regex
 { 5 + 11 }.is.not.like(/18/);
-#| Basic addition doesn't return incorrect value
+#| .isn't.like passes with regex
 { 5 + 11 }.isn't.like(/18/);
-#| Basic addition returns correct value
+
+#| .is.like passes with regex
 { 5 + 11 }.is.like(/16/);
 
+#| .is passes with Str
 { 'foo'.uc }.is('FOO');
 
-#| Basic addition returns correct value
+#| .is.eq passes with Str
+{ 'FOO'.lc }.is.eq('foo');
+
+#| .is.true passes
 { True}.is.true;
 
-#| .isn't works
+#| .isn't.eqv passes
 {5}.isn't.eqv: 51;
