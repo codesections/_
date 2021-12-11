@@ -60,30 +60,30 @@ exact `_` version and ensure that `_` does not cause unexpected name clashes.
 the `README` file in its directory.
 
   * `Pattern::Match` - pattern match with Raku's full destructuring from signature
-    binding. [README](./Pattern/Match/README.md); [src](./Pattern/Match/Match.rakumod)
+    binding. [README](lib/Pattern/Match/README.md); [src](lib/Pattern/Match/Match.rakumod)
 
   * `Print::Dbg` - better print-line debugging than `.raku` or
-    `dd`. [README](./Print/Dbg/README.md); [src](./Print/Dbg/Dbg.rakumod)
+    `dd`. [README](lib/Print/Dbg/README.md); [src](lib/Print/Dbg/Dbg.rakumod)
 
   * `Self::Recursion` - provides `&_` as an alias for `&?ROUTINE` for anonymous self-recursion.
-    [README](./Self/Recursion/README.md); [src](./Self/Recursion/Recursion.rakumod)
+    [README](lib/Self/Recursion/README.md); [src](lib/Self/Recursion/Recursion.rakumod)
 
   * `Text::Paragraphs` - provides a `paragraphs` function similar to
     [`lines`](https://docs.raku.org/routine/lines) except that it breaks text up into paragraphs
-    rather than lines. [README](./Text/Paragraphs/README.md); [src](./Text/Paragraphs/Paragraphs.rakumod)
+    rather than lines. [README](lib/Text/Paragraphs/README.md); [src](lib/Text/Paragraphs/Paragraphs.rakumod)
 
   * `Text::Wrap` - provides a `wrap-words` function that wraps text to a specified line length (a
-    better alternative to Rakudo's private `naive-word-wrapper`). [README](./Text/Wrap/README.md);
-    [src](./Text/Wrap/Wrap.rakumod)
+    better alternative to Rakudo's private `naive-word-wrapper`). [README](lib/Text/Wrap/README.md);
+    [src](lib/Text/Wrap/Wrap.rakumod)
 
   * `Test::Doctest::Markdown` - tests Raku code blocks from `README`s or other markdown files and,
     optionally, compares their output to `# OUTPUT: «…»`
-    comments. [README](./Test/Doctest/Markdown/README.md); [src](./Test/Doctest/Markdown/Markdown.md)
+    comments. [README](lib/Test/Doctest/Markdown/README.md); [src](lib/Test/Doctest/Markdown/Markdown.md)
 
   * `Test::Fluent` - A thin wrapper over [Test](https://docs.raku.org/type/Test) that lets you
     describe tests in [declarator
     comments](https://docs.raku.org/language/pod#index-entry-declarator_blocks_#=) (`#|`) and to
-    more fluently chain test methods.[README](./Test/Fluent/README.md); [src](./Test/Fluent/Fluent.md)
+    more fluently chain test methods.[README](lib/Test/Fluent/README.md); [src](lib/Test/Fluent/Fluent.md)
 
 ## Contributing
 
