@@ -11,10 +11,10 @@ inspection](https://proofwiki.org/wiki/ProofWiki:Jokes#Proof_by_Inspection): tha
 simple that you can look at it and _tell_ that it is correct.  To achieve this goal, each `_`
 sub-package will always be:
 
-  1. A single file (not counting tests/docs)
-  2. With zero dependencies (not counting other `_` files or [core
+  1. **A single file** (not counting tests/docs)
+  2. **with zero dependencies** (not counting other `_` files or [core
      modules](https://docs.raku.org/language/modules-core))
-  3. That's no more than 70 lines long
+  3. **with no more than 70 lines**
 
 This means that you or any other Raku programmer can evaluate any `_` sub-package by opening a
 single file and reading a page of code.  If you have questions or concerns about any `_`
@@ -24,7 +24,7 @@ However, just because you can doesn't mean that you must: each `_` sub-package i
 the accompanying `README` file located in its directory.  Similarly, as valuable as "proof by
 inspection" my be, it's no substitute for tests. (Recall [Knuth's
 warning to a colleague](https://www-cs-faculty.stanford.edu/~knuth/faq.html): "Beware of bugs in the above code; I
-have only proved it correct, not tried it.**).  Accordingly, each sub-package also has its own tests.
+have only proved it correct, not tried it.").  Accordingly, each sub-package also has its own tests.
 
 **NOTE**: Once `_` has a production release, it will guarantee backwards compatibility.  However,
 `_` is currently beta software and does **not promise backwards compatibility**.
@@ -38,19 +38,21 @@ Install `_` with `$ zef install _:auth<github:codesections>`.
 
 ## Usage
 
-To use `_`, you can import all of `_`'s exported functions with `use _`. This style of
-importing is intended for prototyping/experimentation when you are not which `_` functions you may use.
+To use `_`, you can import all of `_`'s non-test functions with `use _`, all of its test functions
+with `use _ :Test`, or both sets with `use _ :ALL`. This style of importing is intended for
+prototyping/experimentation when you are not which `_` functions you may use.
 
 Alternatively, you can selectively import exported functions (or other symbols) by passing their
 name to the `use _` statement.  For example, here's how you could import the `&dbg` function from
-the `Print::Dbg` sub-package and the `&wrap-words` function from the `Text::Wrap` sub-package:
+the `Print::Dbg` sub-package and the `&wrap-words` function from the `Text::Wrap` sub-package using
+a fully-qualified use statement:
 
 ```raku
-use _ <&dbg &wrap-words>;
+use _:ver<0.0.1>:auth<fez:codesections> <&dbg &wrap-words>;
 ```
 
-This style of imports is intended for later in the development process/when you want to ensure that
-`_` does not cause unexpected name clashes.
+This style of imports is intended for later in the development process/when you want to pin to an
+exact `_` version and ensure that `_` does not cause unexpected name clashes.
 
 ## sub-packages
 
