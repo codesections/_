@@ -1,5 +1,6 @@
 unit module Pattern::Match;
 
+#| Error for a shadowed pattern
 class X::PatternMatch::Unreachable is Exception is export {
     has Signature $.shadowed is required;
     has Signature $.prior    is required;
@@ -8,6 +9,7 @@ class X::PatternMatch::Unreachable is Exception is export {
                      ~"shadowed by the prior pattern\n $.prior.gist()\n" }
 }
 
+#| Error for unmatched input – suggests a default case
 class X::PatternMatch::NoMatch is Exception is export {
     has Str  $.capture  is required;
     has Code @.branches is required;
@@ -37,14 +39,17 @@ sub shadows(&prior-fn, &cur-fn) {
          && &prior-fn.&signature-with-literals ~~ &cur-fn.signature
 }
 
+#| Run the first of the provided blocks with a signature that matches $topic
 our proto choose(|) is export {*}
 multi choose(:on($topic) is raw = callframe(2).my<$_>, *@fns where .grep(Block) == +$_) {
-    my (Bool $match, Mu $return-val);
+    my (Bool $match-found, Mu $return-val) = (False, Mu);
     for @fns -> &f {
+        # We need to run the full loop to find shadowed cases, so don't &last after finding a match
         if @fns[$++^..*].first({.&shadows: &f}) -> $_ {
            die X::PatternMatch::Unreachable.new: :shadowed(.signature) :prior(&f.signature) }
-        if $match.not && try &f.cando($topic.List.Capture) ->$ (&fn) {
-            ($match, $return-val) = (True, fn(|$topic)) }}
+        next if $match-found;
+        if try &f.cando($topic.List.Capture) ->$ (&fn) { $match-found = True;
+                                                         $return-val = fn |$topic }}
 
-    $match ?? $return-val !! die X::PatternMatch::NoMatch.new: :capture($topic.raku):branches[@fns]
+    $match-found ?? $return-val !! die X::PatternMatch::NoMatch.new: :capture($topic.raku):branches[@fns]
 }
