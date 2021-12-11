@@ -5,9 +5,10 @@ class X::_::Unsupported is Exception is export {
                      ~"work with \&_.  Either use \&?ROUTINE instead, or add a proto with " ~ '{{*}}' }
 }
 
+#| Proxy to store the &calling-fn the first time we get it (to avoid walking the callframe each time)
 sub ROUTINE is rw {
     my &calling-fn;
-    Proxy.new: FETCH => method ()     { &calling-fn },
+    Proxy.new: FETCH => method ()           { &calling-fn },
                STORE => method (&new is raw){ &calling-fn = &new }}
 
 my $fn := ROUTINE;

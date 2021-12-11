@@ -22,6 +22,7 @@ shorter name (well, and that it completes the pattern created by [`$_`, `@_`, an
 sub f(UInt $n) { $n == 0|1  ?? $n !! &_($n-1) + &_($n-2) }
 say f(5);           # OUTPUT: «85»
 ```
+
 Please note that (as the lack of a `?` in its name indicates) `&_` is a run-time construct rather
 than a compile-time one and thus has significantly worse performance than `&?ROUTINE`, specifically
 in situations where an implementation would inline a call to `&?ROUTINE` (e.g., deeply recursive
