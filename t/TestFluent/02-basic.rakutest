@@ -1,17 +1,107 @@
 use _ :Test;
 
-plan 7;
+#plan 34;
 
-#| .is.not.like passes with regex
-{ 5 + 11 }.is.not.like(/18/);
+sub fn(--> 42) {}
+#| .is.true works for &ok example
+{ fn() == 42}.is.true;
+
+#| .is.approx works like &is-approx
+{3}.is.approx(4, :abs-tol(2));
+# Is 3 approximately (4, :abs-tol(2))?
+
+#| .is.approximately: :relative-tolerance works like &is-approx :rel-tol
+{10}.is.approximately(10.5, :rel-tol(5));
+
+#| .is.like: :cmp-with works like &cmp
+{'my spelling is apperling'}.is(:with<~~>, /perl/);
+
+#| .is.like: :with works like &cmp
+  {'my spelling is apperling'}.is(:with(&[!~~]), /Raku/);
+# Is {'my spelling is apperling'} like (/Raku/, :with(&[!~~]))?;
+# Does {'my spelling is apperling'} match /Raku/ using &[!~~]?;
+
+#| .is.type-that.isa works like &isa-ok
+{Bool}.is.type.that.isa(Int);
+
+#| .is.type.that.isa works like &isa-ok
+{<4/2>}.is.type.that.isa(Real);
+
+#| .is.a works like &isa-ok
+{&say}.is.a(Code);
+
+# Auto-generated msg
+{42}.is().a(Int);
+# Auto-generated msg
+{42}.is.type.that.does(Numeric);
+# Auto-generated msg
+{<42>}.is.a.type.that.does(Stringy);
+#<42> is a type that does Stringy;
+#is <42> a type that does Stringy?
+# Auto-generated msg
+{<42>}.is.a.type.that.can('uc');
+
+#| .is.a.type.that.can works like &can-ok
+{42}.is.a.type.that.can('abs');
+
+#say &postfix:<is>({42});
+
+#| .is.a.type.that.can: :meth works like &can-ok
+{42}.is.a.type.that.can: :sqrt;
+
+{'NativeCall'}.is.usable;
+
+#| .is.dead works like &dies-ok
+{die}.is.dead;
+
+#| .isn't.alive works like &dies-ok
+{+"Str"}.isn't.alive;
+
+
+#| .isn't.dead works like &lives-ok
+{; :88mph}.isn't.dead;
+# Is {; :88mph}
+#| .isn't.alive works like &dies-ok
+{; die :88mph }.isn't.alive;
+
+
+#| {….EVAL}.is.dead works like &dies-ok
+{ "+'foo'".EVAL }.is.dead;
+
+#| {….EVAL}.is.alive works like &lives-ok
+{ "'foo'".EVAL }.is.alive;
+
+#| .is.dead: :like works like &throws-like
+{die}.is.dead(:like(X::AdHoc));
+# default msg
+{die}.is.dead(:like(X::AdHoc));
+
+{die "SNAFU"}.is.dead: :like, :message(/SNA.U/);
+
+{+"Bar"}.is.failure;
+
+{+"Bar"}.is.failure: :like(X::Str::Numeric);
+
+#| .is.auto-pass works like &pass
+{ 99 }.is.auto-pass;
+
+{ <55> }.is: IntStr, :with<~~>;
+
+
+  { <55> }.is: IntStr, :with(&[~~]);
+  #| Foo
+  #Is { <55> }: .like: IntStr, :with(&[~~]);
+  #{ <55> } [&is] {.like: IntStr, :with(&[~~])}
+
+#| .isn't.auto-flunk works like &fail
+#{ 99 }.isn't.auto-flunk;
+#| .isn't.like passes with regex
+{ 5 + 11 }.isn't.like(/18/);
 #| .isn't.like passes with regex
 { 5 + 11 }.isn't.like(/18/);
 
 #| .is.like passes with regex
 { 5 + 11 }.is.like(/16/);
-
-#| .is passes with Str
-{ 'foo'.uc }.is('FOO');
 
 #| .is.eq passes with Str
 { 'FOO'.lc }.is.eq('foo');
@@ -21,3 +111,22 @@ plan 7;
 
 #| .isn't.eqv passes
 {5}.isn't.eqv: 51;
+
+#| Discription
+#{Int}.is.not.eqv(Int);
+
+{Int}.is(:with(&[!eqv]), Int);
+
+
+
+#{ use Test; dd &done-testing}
+#| dd &done-testing;
+{say "42"; note "The answer!"}.output.is.eq("42\nThe answer!\n");
+
+{1+1}.is.deeply(3-1);
+
+#| AUTOBAHN passes YOU
+{;0}.is.not.auto-flunk;
+
+dd &callframe;
+done-testing;

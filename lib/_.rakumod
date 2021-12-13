@@ -18,12 +18,13 @@ my constant @default-export-pairs = ('&term:<&_>'  => &Self::Recursion::term:<&_
 my constant @test-fluent-exports = <&plan &done-testing &subtest &diag &skip-rest &bail-out>;
 my constant @test-doctest-exports = <&doctest>;
 
-package EXPORT::DEFAULT { OUR::{.key} := .value           for @default-export-pairs }
-package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports;
+package EXPORT::DEFAULT { OUR::{.key} := .value                      for @default-export-pairs }
+package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_}            for @test-fluent-exports;
+                          #OUR::{.key} := .value                      for Test::Fluent::EXPORT::DEFAULT::.pairs;
                           OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports; }
-package EXPORT::ALL     { OUR::{.key} := .value           for @default-export-pairs;
+package EXPORT::ALL     { OUR::{.key} := .value                      for @default-export-pairs;
                           OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports;
-                          OUR::{$_} := Test::Fluent::{$_} for @test-fluent-exports}
+                          OUR::{$_} := Test::Fluent::{$_}            for @test-fluent-exports}
 
 class X::Import::InvalidPos is X::Import::Positional {
     has %.exports;  has $.invalid;
