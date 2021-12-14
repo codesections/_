@@ -1,88 +1,85 @@
 need Test;
 unit module Test::Fluent;
-# TODO: Finish and test {}.output.is.…
-#       should .is(val) be legal?  Maybe with ~~ semantics?
-#       consider accepting long params w/ $.approx (maybe via map?)
-#       find different name for .is / .is.like.
-#         - .is.equal?
-#         - .is.match-for? .is.match.for?
-#         - .is(* …)
-#         - .is.same-as? .is.same.as?
+use Print::Dbg;
 
 OUR::{$_} := Test::EXPORT::DEFAULT::{$_} for <&plan &done-testing &subtest &diag &skip &bail-out &todo &skip-rest>;
 
 use Test;
 multi trait_mod:<is>(Routine $r, :$test) { trait_mod:<is>($r, :test-assertion) }
+my class Tester {
+    has      &.block is required;
+    has Bool:D $.negated=False;
+    has Mu   $.value handles <gist raku Str> = do given try {no fatal; &!block()} { when ?$! { $! }
+                                                                                    default  {.so; $_ }};
+
+    multi method msg { &!block.WHY ?? ~&!block.WHY !! ()}
+
+    multi method a($exp)      is test { $.has.a.class: $exp}
+    multi method alive        is test { ($!negated ?? &dies-ok !! &lives-ok)(&!block,       |$.msg); self }
+    multi method like($exp)   is test { ($!negated ?? &unlike  !! &like    )($.value, $exp, |$.msg); self } # TODO
+    multi method true         is test { ($!negated ?? &nok     !! &ok      )($.value,       |$.msg); self }
+    multi method dead         is test { $.not.alive.not; self }
+
+    multi method a                 is test { self          }
+    multi method map(&fn)          is test { $!value = fn($!value); self }
+    multi method ok                is test { $.true        ; self}
+    multi method deeply($_)        is test { $.eqv:    $_  ; self} # TODO
+    multi method approximately(|c) is test { $.approx: |c  ; self} # TODO
+    multi method auto-flunk        is test { flunk  |$.msg ; self}
+    multi method auto-pass         is test { pass   |$.msg ; self}
+
+    multi method approx(|c)        is test { is-approx   $!value, |c, |$.msg; self }      # TODO negate
+    multi method usable            is test { use-ok      $!value,           |$.msg; self} # TODO negate
+
+    multi method class($_)   is test { my $exp = ($_ ~~ Str:D ?? ::($_) !! $_);
+                                       if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
+                                       $!negated ?? $.and."~~"($exp)  !! isa-ok  $.value, $exp, |$.msg; self }
+    multi method role($_) is test { my $exp = ($_ ~~ Str:D ?? ::($_) !! $_);
+                                    $!negated ?? $.is."~~"($exp) !! does-ok $.value, $exp, |$.msg; self}
+    multi method method(Str $exp) is test { $!negated ?? $.map(*.^can($exp)).true !! can-ok  $.value, $exp, |$.msg; self}
+    multi method attribute(Str $exp) is test { $.map(*.^attributes.grep(*.has_accessor).grep(/$exp$/).so).true ; self}
+
+BEGIN {
+    for <not lacking without lacks doesn't> -> $name {
+        Tester.^add_method($name, (method () is test { $!negated = $!negated.not; self }).&{.set_name($name); $_})}
+    for <an and is object obj type that has> -> $name {
+        Tester.^add_method($name, (method () is test {                          ; self }).&{.set_name($name); $_})}
+    for [ &[eq], &[!eq]; &[ne], &[!ne]; &[gt], &[!gt]; &[ge], &[!ge]; &[lt], &[!lt]; &[le], &[!le];
+          &[eqv], &[!eqv]; &[before], &[!before];
+          &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=]; &[>], &[!>];
+          &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[~~], &[!~~]; &[=~=], &[!=~=]; &[∈], &[!∈];
+          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄];
+          &[⊆], &[!⊆]; &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
+        ] -> $ (&reg, &neg, :$name = (S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name))  {
+        my \op = (method ($exp) is test { cmp-ok $.value, [&reg, &neg][$.negated], $exp, |$.msg; self}).set_name: $name;
+        Tester.^add_method: $name, op
+    }}
+}
+
 my role Testable {
-    has &.b;
-    multi method ok         is test { $.true }
-    multi method deeply($_) is test { $.eqv: $_ }
-    multi method auto-flunk is test { flunk  |$.msg }
-    multi method auto-pass  is test { pass   |$.msg }
-    method msg { &!b.WHY || ()} }
-
-my class Tester {...}
-my class NegatedTester does Testable  {
-    multi method not { Tester.new: :&!b}
-
-    # multi method approximately(|c)       is test { is-approx   &!b(), |c }
-    # multi method approx(|c)              is test { is-approx   &!b(), |c }
-    # multi method dead(:$like!, *%m)      is test { throws-like &!b,              $like,   |$.msg, |%m }
-    multi method alive      is test { dies-ok  &!b,                  |$.msg  }
-    # multi method alive    is test { lives-ok &!b,                  |$.msg }
-    multi method dead       is test { lives-ok &!b,                  |$.msg  }
-    # multi method dead     is test { dies-ok  &!b,                  |$.msg }
-    multi method eq($exp)   is test { isnt     &!b(),          $exp, |$.msg  }
-    # multi method eq($exp) is test { is       &!b(),          $exp,  |$.msg }
-    multi method like($exp) is test { unlike   &!b(),          $exp, |$.msg  }
-  # multi method like($exp) is test { like     &!b(),          $exp, |$.msg }
-    multi method true       is test { nok      &!b(),                |$.msg  }
-    # multi method true     is test { ok       &!b(),                |$.msg }
-    multi method eqv($exp)  is test { cmp-ok   &!b(), &[!eqv], $exp, |$.msg }
-    # multi method eqv(Mu $exp)            is test { is-deeply   &!b(),            $exp,    |$.msg }
-}
-
-my class Tester does Testable  {
-    multi method not  { NegatedTester.new: :&!b}
-    multi method type { self but role { method that(|c)  {
-        self but role { multi method isa(Mu \exp)     is test { $.a: exp  }
-                        multi method does(Mu \exp)    is test { does-ok &.b.(), exp,      |$.msg}
-                        multi method can(Str \exp)    is test { can-ok  &.b.(), exp,      |$.msg}
-                        multi method can(*%h where 1) is test { can-ok  &.b.(), %h.kv[0], |$.msg}}}} }
-
-    multi method a                       is test { self }
-    multi method a(Mu:U $exp)            is test { isa-ok      &!b(),            $exp,    |$.msg }
-    multi method alive                   is test { lives-ok    &!b,                       |$.msg }
-    multi method approximately(|c)       is test { is-approx   &!b(), |c }
-    multi method approx(|c)              is test { is-approx   &!b(), |c }
-    multi method dead                    is test { dies-ok     &!b,                       |$.msg }
-    multi method dead(:$like!, *%m)      is test { throws-like &!b,              $like,   |$.msg, |%m }
-    multi method eq( $exp)               is test { is          &!b(),            $exp,    |$.msg }
-    multi method eqv(Mu $exp)            is test { is-deeply   &!b(),            $exp,    |$.msg }
-    multi method failure(:$like!)        is test { fails-like  &!b,              $like,   |$.msg }
-    multi method failure                 is test { isa-ok     (&!b() orelse $_), Failure, |$.msg }
-    multi method like($exp)              is test { like        &!b(),            $exp,    |$.msg }
-    # multi method like($exp, :$cmp-with!) is test { cmp-ok      &!b(), $cmp-with, $exp,    |$.msg }
-    # multi method like($exp, :$with!)     is test { cmp-ok      &!b(), $with,     $exp,    |$.msg }
-    multi method true                    is test { ok          &!b(),                     |$.msg }
-    multi method usable                  is test { use-ok      &!b(),                     |$.msg }
-}
-
-use MONKEY-TYPING;
-augment class Block {
     my class Printer { has $!txt handles <Str> = '';
                        method print(+a) { $!txt ~= a.join }}
-    multi method is   (&b:)           { Tester.new: :&b }
-    multi method is(&b: $exp, :$with) is test { cmp-ok &b(), $with, $exp, |(&b.WHY || ()) }
-    multi method isn't(&b:)           { NegatedTester.new: :&b }
-    multi method output(&b: Bool :$stdout=False, Bool :$stderr=False)         {
+    multi method is(&block:) { Tester.new: :&block }
+    multi method has    { $.is }
+    multi method lacks  { $.is.not }
+    multi method isn't  { $.is.not }
+    multi method output(&block: Bool :$stdout=False, Bool :$stderr=False)         {
         { temp $*OUT = my $out = ($stdout || none($stdout, $stderr)) ?? Printer.new !! '';
           temp $*ERR = my $err = ($stderr || none($stdout, $stderr)) ?? Printer.new !! '';
-          b();
-          $out ~ $err}.&{.set_why(&b.WHY); $_}}
+          block();
+          $out ~ $err}.&{.set_why(&block.WHY); $_}}
 }
+use MONKEY-TYPING;
+augment class Block does Testable {}
 
-
+# TODO: Finish and test {}.output.is.…
+#       should .is(val) be legal?  Maybe with ~~ semantics?
+#       better default msgs?
+#       consider accepting long params w/ $.approx (maybe via map?)
+#       does {'s' + 1}.is.not.dead: :like(X::AdHoc) even make sense?
+#         ^^^ maybe cut it and chain so we can do {'s' + 1}.is.dead.and.not.eqv
+#       find different name for .is / .is.like. #         - .is.equal? #         - .is.match-for? .is.match.for?
+                                                #         - .is(* …)   #         - .is.same-as? .is.same.as?
             # say $n;
             # #my &cf = nextcallee;
             # note 'enter';
@@ -180,3 +177,29 @@ augment class Block {
 
     # multi method eqv($exp)  is test { &!b().&{ ok($_ !eqv $exp, |$.msg)
     #                                              or diag "expected: {$exp.raku} !eqv {.raku}" }}
+
+    # multi method eqv($exp)  is test { [&{is-deeply                     &!b(), $exp, |$.msg },
+    #                                    &{cmp-ok             &!b(),   &[!eqv], $exp, |$.msg }][$!negated]}
+
+    # # multi method eqv($exp, 0 :$!=$.negated)  is test { is-deeply &!b(),            $exp,    |$.msg }
+    # # multi method eqv($exp, 1 :$!=$.negated)  is test { cmp-ok    &!b(),   &[!eqv], $exp,    |$.msg }
+    # multi method eqv($exp) is test { when $!negated.so  { cmp-ok     &!b(),   &[!eqv], $exp,    |$.msg }
+    #                                  when $!negated.not { is-deeply  &!b(),            $exp,    |$.msg }}
+
+    # multi method dead(
+    #      :like($exp)!, *%m)   is test { (&!block,   $exp, |$.msg).&{ [&neqv, {throws-like |@_, %m}][$!negated](|$_) }; self }
+
+    #multi method an                is test { self          }
+    #multi method and               is test { self          }
+    #multi method is                is test { self          }
+
+    #multi method eqv($exp)    is test { ($.value, $exp, |$.msg).&{ [&is-deeply,   &neqv][$!negated](|$_) }; self }
+
+
+    # multi method type(:($t=self)) { self but role { method that(|c)  {
+    #     self but role { multi method isa(Mu \exp)  is test { $.a: exp;                     $t }
+    #                     multi method does(Mu \exp) is test { does-ok $.value, exp, |$.msg; $t }
+    #                     multi method can(Str \exp) is test { can-ok  $.value, exp, |$.msg; $t }}}}}
+
+    #`{ if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
+                                        $!negated ?? $.and."~~"($exp)  !! isa-ok  $.value, $exp, |$.msg; self}

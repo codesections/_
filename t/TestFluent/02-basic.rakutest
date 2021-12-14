@@ -10,19 +10,20 @@ sub fn(--> 42) {}
 {3}.is.approx(4, :abs-tol(2));
 # Is 3 approximately (4, :abs-tol(2))?
 
-#| .is.approximately: :relative-tolerance works like &is-approx :rel-tol
+#| TODO .is.approximately: :relative-tolerance works like &is-approx :rel-tol
 {10}.is.approximately(10.5, :rel-tol(5));
 
 #| .is.like: :cmp-with works like &cmp
-{'my spelling is apperling'}.is(:with<~~>, /perl/);
+{'my spelling is apperling'}.is.like(/perl/);
 
 #| .is.like: :with works like &cmp
-  {'my spelling is apperling'}.is(:with(&[!~~]), /Raku/);
+  {'my spelling is apperling'}.is.not.like(/Raku/);
 # Is {'my spelling is apperling'} like (/Raku/, :with(&[!~~]))?;
 # Does {'my spelling is apperling'} match /Raku/ using &[!~~]?;
 
-#| .is.type-that.isa works like &isa-ok
+#| .is.type.that.isa works like &isa-ok
 {Bool}.is.type.that.isa(Int);
+{42}.is.object.and.a.type.that.isa(Int);
 
 #| .is.type.that.isa works like &isa-ok
 {<4/2>}.is.type.that.isa(Real);
@@ -36,6 +37,8 @@ sub fn(--> 42) {}
 {42}.is.type.that.does(Numeric);
 # Auto-generated msg
 {<42>}.is.a.type.that.does(Stringy);
+
+{<42>}.is.a(Stringy);
 #<42> is a type that does Stringy;
 #is <42> a type that does Stringy?
 # Auto-generated msg
@@ -46,8 +49,8 @@ sub fn(--> 42) {}
 
 #say &postfix:<is>({42});
 
-#| .is.a.type.that.can: :meth works like &can-ok
-{42}.is.a.type.that.can: :sqrt;
+#| .is.a.type.that.can('meth') works like &can-ok
+{42}.is.a.type.that.can('sqrt');
 
 {'NativeCall'}.is.usable;
 
@@ -71,24 +74,60 @@ sub fn(--> 42) {}
 #| {….EVAL}.is.alive works like &lives-ok
 { "'foo'".EVAL }.is.alive;
 
-#| .is.dead: :like works like &throws-like
+#| .is.dead::like works like &throws-like
 {die}.is.dead(:like(X::AdHoc));
-# default msg
-{die}.is.dead(:like(X::AdHoc));
+#| .is.dead has no default msg
+{die}.is.dead; #.and.is.a(X::AdHoc);
 
-{die "SNAFU"}.is.dead: :like, :message(/SNA.U/);
+{die "SNAFU"}.is.dead.map(->$ (:$payload, *%) {$payload}).like(/SNA.U/); #: :like, :message(/SNA.U/);
+{55}.is.a(Int).and.is.not.a(Str);
 
-{+"Bar"}.is.failure;
+#| .is.a(Failure) works
+{+"Bar"}.is.a(Failure);
 
-{+"Bar"}.is.failure: :like(X::Str::Numeric);
+note "================";
+{42}.has.a.class(Int);
+{42}.has.a.class('Int');
+#| .lacks.a.class :U
+{42}.lacks.a.class(Str);
+#| .lacks.a.class Str:D
+{42}.lacks.a.class('Str');
+#| .has.not.role :U
+{42}.has.not.role(Stringy);
+#| .has.not.role Str:D
+{42}.has.not.role('Stringy');
+
+{42}.has.role(Numeric);
+{42}.has.role('Numeric');
+#| .has.method
+{42}.has.method('Int');
+#| .has.not.method
+{42}.has.not.method('Inter');
+
+#| .has.attribute
+{<8/7>}.has.attribute('numerator');
+
+#| .lacks.attribute
+{5}.lacks.attribute('numerator');
+my class C { has $.pub; has $!priv }
+#| .has.attribute('pub')
+{C}.has.attribute('pub');
+#| .lacks.attribute('priv')
+{C}.lacks.attribute('priv');
+#{ use Test; nok False }
+
+#| .is.failure: :like
+{+"Bar"}.is.a(X::Str::Numeric);
 
 #| .is.auto-pass works like &pass
 { 99 }.is.auto-pass;
 
-{ <55> }.is: IntStr, :with<~~>;
+#| .is: IntStr, :with<~~>;
+{ <55> }.is.a(IntStr);
 
 
-  { <55> }.is: IntStr, :with(&[~~]);
+#| .is: IntStr, :with([~~])
+  { <55> }.is.a: IntStr;
   #| Foo
   #Is { <55> }: .like: IntStr, :with(&[~~]);
   #{ <55> } [&is] {.like: IntStr, :with(&[~~])}
@@ -115,18 +154,21 @@ sub fn(--> 42) {}
 #| Discription
 #{Int}.is.not.eqv(Int);
 
-{Int}.is(:with(&[!eqv]), Int);
+#{Int}.is(:with(&[!eqv]), Int);
 
 
 
 #{ use Test; dd &done-testing}
 #| dd &done-testing;
-{say "42"; note "The answer!"}.output.is.eq("42\nThe answer!\n");
+#{say "42"; note "The answer!"}.output.is.eq("42\nThe answer!\n");
 
-{1+1}.is.deeply(3-1);
+#{1+1}.is.deeply(3-1);
 
 #| AUTOBAHN passes YOU
-{;0}.is.not.auto-flunk;
-
-dd &callframe;
+#{;0}.is.not.auto-flunk;
+{;}
+#| .is.not.a works
+{55}.is.not.a(Str);
+{'A'}.is.lt: 'C';
+{55}.is.not."==="(59);
 done-testing;
