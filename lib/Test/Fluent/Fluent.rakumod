@@ -1,27 +1,50 @@
-need Test;
 unit module Test::Fluent;
-use Print::Dbg;
-
-OUR::{$_} := Test::EXPORT::DEFAULT::{$_} for <&plan &done-testing &subtest &diag &skip &bail-out &todo &skip-rest>;
-
 use Test;
-multi trait_mod:<is>(Routine $r, :$test) { trait_mod:<is>($r, :test-assertion) }
+
+OUR::{$_} := ::{$_} for <&plan &done-testing &subtest &diag &skip &bail-out &todo &skip-rest>;
+
+# sub can-ok (|)   {}
+# sub cmp-ok (|)   {}
+# sub dies-ok (|)   {}
+# sub does-ok (|)   {}
+# sub flunk (|)   {}
+# sub is-approx (|)   {}
+# sub like (|)   {}
+# sub isa-ok (|)   {}
+# sub lives-ok (|)   {}
+# sub use-ok (|)   {}
+# sub ok (|)   {}
+# sub nok (|)   {}
+# sub pass (|)   {}
+# sub unlike (|)   {}
+
+
 my class Tester {
+
+#use Test;
+    multi trait_mod:<is>(Routine $r, :$test) {} #{ trait_mod:<is>($r, :test-assertion) }
     has      &.block is required;
     has Bool:D $.negated=False;
+    has      @.chain;
     has Mu   $.value handles <gist raku Str> = do given try {no fatal; &!block()} { when ?$! { $! }
                                                                                     default  {.so; $_ }};
 
-    multi method msg { &!block.WHY ?? ~&!block.WHY !! ()}
+    multi method msg($exp?) {
 
-    multi method a($exp)      is test { $.has.a.class: $exp}
-    multi method alive        is test { ($!negated ?? &dies-ok !! &lives-ok)(&!block,       |$.msg); self }
-    multi method like($exp)   is test { ($!negated ?? &unlike  !! &like    )($.value, $exp, |$.msg); self } # TODO
-    multi method true         is test { ($!negated ?? &nok     !! &ok      )($.value,       |$.msg); self }
-    multi method dead         is test { $.not.alive.not; self }
+        if &!block.WHY -> $_ { ~$_ }
+        else { "Test that: \{\$GOT}.is." ~@!chain.join(".") ~ "(\$EXPECTED)" with $exp;}
+    }
+
+    multi method a($exp)          is test { $.has.a.class: $exp}
+    multi method alive            is test { ($!negated ?? &dies-ok !! &lives-ok)(&!block,       |$.msg); self }
+    multi method like(Regex $exp) is test { ($!negated ?? &unlike  !! &like    )($.value, $exp, |$.msg); self }
+    multi method like($exp)       is test { $.is."~~"($exp) }
+    multi method true             is test { ($!negated ?? &nok     !! &ok      )($.value,       |$.msg); self }
+    multi method dead             is test { $.not.alive.not; self }
 
     multi method a                 is test { self          }
-    multi method map(&fn)          is test { $!value = fn($!value); self }
+    multi method map(&fn)          is test { (my &block = {fn($!value)}).set_why(&!block.WHY);
+                                             $.clone: :&block, :value(block) }
     multi method ok                is test { $.true        ; self}
     multi method deeply($_)        is test { $.eqv:    $_  ; self} # TODO
     multi method approximately(|c) is test { $.approx: |c  ; self} # TODO
@@ -38,39 +61,37 @@ my class Tester {
                                     $!negated ?? $.is."~~"($exp) !! does-ok $.value, $exp, |$.msg; self}
     multi method method(Str $exp) is test { $!negated ?? $.map(*.^can($exp)).true !! can-ok  $.value, $exp, |$.msg; self}
     multi method attribute(Str $exp) is test { $.map(*.^attributes.grep(*.has_accessor).grep(/$exp$/).so).true ; self}
-
-BEGIN {
+ BEGIN {
     for <not lacking without lacks doesn't> -> $name {
-        Tester.^add_method($name, (method () is test { $!negated = $!negated.not; self }).&{.set_name($name); $_})}
-    for <an and is object obj type that has> -> $name {
-        Tester.^add_method($name, (method () is test {                          ; self }).&{.set_name($name); $_})}
-    for [ &[eq], &[!eq]; &[ne], &[!ne]; &[gt], &[!gt]; &[ge], &[!ge]; &[lt], &[!lt]; &[le], &[!le];
-          &[eqv], &[!eqv]; &[before], &[!before];
-          &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=]; &[>], &[!>];
-          &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[~~], &[!~~]; &[=~=], &[!=~=]; &[∈], &[!∈];
-          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄];
-          &[⊆], &[!⊆]; &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
-        ] -> $ (&reg, &neg, :$name = (S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name))  {
-        my \op = (method ($exp) is test { cmp-ok $.value, [&reg, &neg][$.negated], $exp, |$.msg; self}).set_name: $name;
-        Tester.^add_method: $name, op
-    }}
-}
+        Tester.^add_method($name, (method () is test { $.clone: :negated(not $.negated)}).set_name($name))}
 
-my role Testable {
-    my class Printer { has $!txt handles <Str> = '';
-                       method print(+a) { $!txt ~= a.join }}
-    multi method is(&block:) { Tester.new: :&block }
-    multi method has    { $.is }
-    multi method lacks  { $.is.not }
-    multi method isn't  { $.is.not }
-    multi method output(&block: Bool :$stdout=False, Bool :$stderr=False)         {
-        { temp $*OUT = my $out = ($stdout || none($stdout, $stderr)) ?? Printer.new !! '';
-          temp $*ERR = my $err = ($stderr || none($stdout, $stderr)) ?? Printer.new !! '';
-          block();
-          $out ~ $err}.&{.set_why(&block.WHY); $_}}
+    for [ &[eq], &[!eq]; &[ne], &[!ne]; &[before], &[!before]; &[after], &[!after]; &[gt], &[!gt]; &[ge], &[!ge];
+          &[lt], &[!lt]; &[le], &[!le]; &[eqv], &[!eqv]; &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=];
+          &[>], &[!>]; &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[=~=], &[!=~=]; &[~~], &[!~~]; &[∈], &[!∈];
+          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄]; &[⊆], &[!⊆];
+          &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
+        ] -> $ (&reg, &neg)  {
+        my $name = S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name;
+        my \op  = method ($_) is test { @!chain.push("\"$name\"");
+                                        cmp-ok $.value, [&reg, &neg][$.negated], $_, |$.msg($_); self}.set_name: $name;
+        my \rev = method ($_) is test { @!chain.push("\"!$name\"");
+                                        cmp-ok $.value, [&neg, &reg][$.negated], $_, |$.msg($_); self}.set_name: "!$name";
+        Tester.&{.^add_method: $name, op; .^add_method: "!$name", rev }
+    }
+    Tester.^add_method($_, method {@!chain.push($_); self}.set_name($_)) for <an and is object obj type that has>;
+
+    submethod TWEAK(|) { for self.^methods(:local) -> $m {
+        $m.?wrap(-> | { unless $m.name eq <negated TWEAK BUILDALL raku gist Str msg value>.any {
+                              @!chain.push: $m.name; };
+                        callsame }) }}
+    Block.^add_method($_, method {Tester.new: :block(self)}.set_name($_)) for <is has>;
+    Block.^add_method($_, method {$.is.not                }.set_name($_)) for <lacks isn't>;
+    Block.^add_method($_, method {... 'NYY'               }.set_name($_)) for <output>;
 }
-use MONKEY-TYPING;
-augment class Block does Testable {}
+}
+#----------------
+
+
 
 # TODO: Finish and test {}.output.is.…
 #       should .is(val) be legal?  Maybe with ~~ semantics?
@@ -80,6 +101,25 @@ augment class Block does Testable {}
 #         ^^^ maybe cut it and chain so we can do {'s' + 1}.is.dead.and.not.eqv
 #       find different name for .is / .is.like. #         - .is.equal? #         - .is.match-for? .is.match.for?
                                                 #         - .is(* …)   #         - .is.same-as? .is.same.as?
+
+
+    # submethod new(&b) {
+    #     for self.^methods(:local) -> $m { $m.?wrap(-> | {unless $m.name eq 'BUILDALL'|'raku' {#`[TODO]}; callsame }) }
+    #     self.bless: :block(&b);
+    # }
+#sub attest(&block) is export { Tester.new: :&block }
+
+
+# my role TestErrFmt[:$got, :$op, :$exp] {
+#     method say($_) { .chars ≤ 80 && .trim.starts-with('# exp') ?? callwith("# comparison failed: $got $op {$exp.raku}")
+#                                                                !! callsame }}
+                # my \op  = method ($exp)  {
+                #     &Test::failure_output() = $PROCESS::ERR but TestErrFmt[:got($.value.raku), :op($name), :$exp] ;
+                #     cmp-ok $.value, [&reg, &neg][$.negated], $exp, |$.msg;
+                #     &Test::failure_output() = $PROCESS::ERR;
+                #     self
+                # }.set_name: $name;
+
             # say $n;
             # #my &cf = nextcallee;
             # note 'enter';
@@ -203,3 +243,26 @@ augment class Block does Testable {}
 
     #`{ if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
                                         $!negated ?? $.and."~~"($exp)  !! isa-ok  $.value, $exp, |$.msg; self}
+
+    # my class Printer { has $!txt handles <Str> = '';
+    #                    method print(+a) { $!txt ~= a.join }}
+    # multi method output(&block: Bool :$stdout=False, Bool :$stderr=False)         {
+    #     { temp $*OUT = my $out = ($stdout || none($stdout, $stderr)) ?? Printer.new !! '';
+    #       temp $*ERR = my $err = ($stderr || none($stdout, $stderr)) ?? Printer.new !! '';
+    #       block();
+    #       $out ~ $err}.&{.set_why(&block.WHY); $_}}
+
+# role Testable {
+    #multi method is(&block:) { Tester.new: :&block }
+    #multi method ::('has')         { $.is }
+    #multi method lacks       { $.is.not }
+    #multi method isn't       { $.is.not }
+    #multi method output(|)   {... 'NYI'}
+# }
+
+    # for <an and is object obj type that has> -> $name {
+    #     Tester.^add_method($name, (method () is test {                          ; self }).set_name($name))}
+
+            # for ((<is has>, method {Tester.new: :block(self)}), (<lacks isn't>, method {$.is.not}),
+            #      ((<output>,), method {...})) -> $ (@names, &m) {
+            #     Block.^add_method($_, &m.set_name($_)) for @names} }
