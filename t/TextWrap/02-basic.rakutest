@@ -35,11 +35,17 @@ subtest "Wraps line to various lengths", {
 
         my $in = $s80.lines.join(' ');
 
-        wrap-words($in, :length(80)).&is: $s80, "Wraps basic text down to 80 chars";
-        wrap-words($in, :length(72)).&is: $s72, "Wraps basic text down to 72 chars";
-        wrap-words($in, :length(60)).&is: $s60, "Wraps basic text down to 60 chars";
-        wrap-words($in, :length(30)).&is: $s30, "Wraps basic text down to 30 chars";
-        wrap-words($s30, :length(80)).&is: $s80, "Wraps basic text up to 80 chars";
+        #wrap-words($in, :length(80)).&is: $s80, "Wraps basic text down to 80 chars";
+        # wrap-words($in, :length(72)).&is: $s72, "Wraps basic text down to 72 chars";
+        # wrap-words($in, :length(60)).&is: $s80, "Wraps basic text down to 60 chars";
+        # wrap-words($in, :length(30)).&is: $s30, "Wraps basic text down to 30 chars";
+        # wrap-words($s30, :length(80)).&is: $s80, "Wraps basic text up to 80 chars";
+        #|[Wraps basic text down to 80 chars]  {wrap-words($in, :length(80))}.is.eq: $s80;
+        #|[Wraps basic text down to 72 chars]  {wrap-words($in, :length(72))}.is.eq: $s72;
+        #|[Wraps basic text down to 60 chars]  {wrap-words($in, :length(60))}.is.eq: $s60;
+        #|[Wraps basic text down to 30 chars]  {wrap-words($in, :length(30))}.is.eq: $s30;
+        {wrap-words($s30, :length(80))}.is.eq: $s80; #= Wraps basic text up to 80 chars
+        is wrap-words($s30, :length(80)), $s80, "Wraps basic text up to 80 chars";
 
         wrap-words($s30, :length(80), :keep-newlines).&is: $s30, "Only wraps long lines with :keep-newlines";
         wrap-words("\n" ~$in, :length(80)).&is: $s80, "Wraps basic text that starts with a ␤";
@@ -143,7 +149,11 @@ subtest "Handles lists", {
     wrap-words($s1                  ).&is: $s1, "Smart mode handles a simple bulleted list with '+' ";
     wrap-words($s1.trans('+' => '*')).&is: $s1.trans('+' => '*'),
                                                "Smart mode handles a simple bulleted list with '*' ";
-    wrap-words($s1.trans('+' => '-')).&is: $s1.trans('+' => '-'),
-                                               "Smart mode handles a simple bulleted list with '-' ";
+    #| Smart mode handles a simple bulleted list with '-'
+    {wrap-words($s1.trans('+' => '-'))}.is.eq: $s1.trans('+' => '-');
+
+
+    # wrap-words($s1.trans('+' => '-')).&is: $s1.trans('+' => '-'),
+    #                                            "Smart mode handles a simple bulleted list with '-' ";
     wrap-words($s2).&is: $s2,                  "Wraps long bulleted list with numerals";
 }

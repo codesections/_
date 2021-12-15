@@ -27,8 +27,12 @@ subtest "Basic ¶ with bullets", {
         $in.lines[^3],                     ":limit works when spliting bullets and headers into ¶¶";
     $in.&paragraphs(:!chomp).&is-deeply:
         $in.lines(:!chomp),                ":!chomp keeps ␤ in bullets";
-    $in.&paragraphs(:!chomp:limit(4)).&is-deeply:
-        $in.lines(:!chomp)[^4],            ":!chomp and :limit can be used together with bullets";
+  # $in.&paragraphs(:!chomp:limit(4)).&is-deeply:
+  #     $in.lines(:!chomp)[^4],            ":!chomp and :limit can be used together with bullets";
+
+    #| :!chomp and :limit can be used together with bullets
+    {}
+    {$in.&paragraphs(:!chomp:limit(4))}.is.eqv: $in.lines(:!chomp).[^4];
 
     indir $*TMPDIR, {
         my $path = tmp-file;

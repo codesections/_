@@ -1,4 +1,5 @@
 use _ :Test;
+#use Test;
 
 #plan 34;
 
@@ -87,6 +88,7 @@ sub fn(--> 42) {}
 
 note "================";
 {42}.has.a.class(Int);
+#= Trailing POD ---
 {42}.has.a.class('Int');
 #| .lacks.a.class :U
 {42}.lacks.a.class(Str);
@@ -166,9 +168,20 @@ my class C { has $.pub; has $!priv }
 
 #| AUTOBAHN passes YOU
 #{;0}.is.not.auto-flunk;
-{;}
+#{;}.is.^methods».name.say;
 #| .is.not.a works
+
 {55}.is.not.a(Str);
 {'A'}.is.lt: 'C';
-{55}.is.not."==="(59);
+#{"foo"}.is.like: /bar/;
+{52}.is."<"(48);
+{"foo"}.is."~~"(/bar/);
+{use Test;
+ can-ok 'foo', 'uc'; }
+ {'foo'}.has.method('uc');
+{use Test;
+ is-deeply 'foo', 'bar'; }
+ {'foo'}.is.eqv: 'bar';
+{use Test; is-deeply 'foo', 'bar'}
+{use Test; is 'foo', 'bar'}
 done-testing;
