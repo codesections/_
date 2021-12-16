@@ -3,37 +3,24 @@ use Test;
 
 OUR::{$_} := ::{$_} for <&plan &done-testing &subtest &diag &skip &bail-out &todo &skip-rest>;
 
-# sub can-ok (|)   {}
-# sub cmp-ok (|)   {}
-# sub dies-ok (|)   {}
-# sub does-ok (|)   {}
-# sub flunk (|)   {}
-# sub is-approx (|)   {}
-# sub like (|)   {}
-# sub isa-ok (|)   {}
-# sub lives-ok (|)   {}
-# sub use-ok (|)   {}
-# sub ok (|)   {}
-# sub nok (|)   {}
-# sub pass (|)   {}
-# sub unlike (|)   {}
 
+my class Tester is Callable {
 
-my class Tester {
-
-#use Test;
-    multi trait_mod:<is>(Routine $r, :$test) {} #{ trait_mod:<is>($r, :test-assertion) }
-    has      &.block is required;
+    multi trait_mod:<is>(Routine:D $r, :$test) { trait_mod:<is>($r, :test-assertion) }
+    has      &.block;
     has Bool:D $.negated=False;
     has      @.chain;
     has Mu   $.value handles <gist raku Str> = do given try {no fatal; &!block()} { when ?$! { $! }
                                                                                     default  {.so; $_ }};
 
     multi method msg($exp?) {
-
-        if &!block.WHY -> $_ { ~$_ }
-        else { "Test that: \{\$GOT}.is." ~@!chain.join(".") ~ "(\$EXPECTED)" with $exp;}
+        my ($got, $expect) = (($!value.raku.chars < 20 ?? $!value.gist !! '$GOT'),
+                              ($exp.raku.?chars < 20 ?? $exp.gist !! '$EXPECTED'));
+        do if &!block.WHY -> $_ { ~$_ }
+        else { "Is $got " ~((@!chain||'').join(" ")) ~ (" $expect ?" with $exp);}
     }
+
+    multi method CALL-ME(|c) { dd c}
 
     multi method a($exp)          is test { $.has.a.class: $exp}
     multi method alive            is test { ($!negated ?? &dies-ok !! &lives-ok)(&!block,       |$.msg); self }
@@ -53,6 +40,7 @@ my class Tester {
 
     multi method approx(|c)        is test { is-approx   $!value, |c, |$.msg; self }      # TODO negate
     multi method usable            is test { use-ok      $!value,           |$.msg; self} # TODO negate
+    method sink(|) { } #TODO -cut?
 
     multi method class($_)   is test { my $exp = ($_ ~~ Str:D ?? ::($_) !! $_);
                                        if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
@@ -72,25 +60,82 @@ my class Tester {
           &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
         ] -> $ (&reg, &neg)  {
         my $name = S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name;
-        my \op  = method ($_) is test { @!chain.push("\"$name\"");
-                                        cmp-ok $.value, [&reg, &neg][$.negated], $_, |$.msg($_); self}.set_name: $name;
-        my \rev = method ($_) is test { @!chain.push("\"!$name\"");
-                                        cmp-ok $.value, [&neg, &reg][$.negated], $_, |$.msg($_); self}.set_name: "!$name";
-        Tester.&{.^add_method: $name, op; .^add_method: "!$name", rev }
+        my method op( $_) is test { cmp-ok $.value, [&reg, &neg][$.negated], $_, |$.msg($_); self}
+        my method rev($_) is test { cmp-ok $.value, [&neg, &reg][$.negated], $_, |$.msg($_); self}
+        &op.set_name: $name;
+        &rev.set_name: "!$name";
+
+        #&reg does role impure { method is-pure (--> False) {}};
+        Tester.&{.^add_method: $name~'-to', &op; .^add_method: "!{$name}-to", &rev }
+        Tester.&{.^add_method: $name, &op; .^add_method: "!$name", &rev }
     }
-    Tester.^add_method($_, method {@!chain.push($_); self}.set_name($_)) for <an and is object obj type that has>;
-
+    Tester.^add_method($_, method {self}.set_name($_)) for <an and is object obj type that has>;
+}
     submethod TWEAK(|) { for self.^methods(:local) -> $m {
-        $m.?wrap(-> | { unless $m.name eq <negated TWEAK BUILDALL raku gist Str msg value>.any {
-                              @!chain.push: $m.name; };
-                        callsame }) }}
-    Block.^add_method($_, method {Tester.new: :block(self)}.set_name($_)) for <is has>;
-    Block.^add_method($_, method {$.is.not                }.set_name($_)) for <lacks isn't>;
-    Block.^add_method($_, method {... 'NYY'               }.set_name($_)) for <output>;
+       if not $m.?is-wrapped and $m.^can('is-test-assertion') {
+           $m.?wrap(method (|) is test-assertion {
+                           @!chain.push($m.name); callsame }) }}}
 }
-}
-#----------------
 
+for [ &[eq], &[!eq]; &[ne], &[!ne]; &[before], &[!before]; &[after], &[!after]; &[gt], &[!gt]; &[ge], &[!ge];
+          &[lt], &[!lt]; &[le], &[!le]; &[eqv], &[!eqv]; &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=];
+          &[>], &[!>]; &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[=~=], &[!=~=];  &[∈], &[!∈];
+          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄]; &[⊆], &[!⊆];
+          &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
+        ] ->$ (&reg, &neg)  {
+        my $name = S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name;
+        #&trait_mod:<is>(&reg, :pure(0));
+        #say &reg.?is-pure;
+
+
+        # sub trait_mod:<is>(Routine:D $r, :$non-pure!) {
+        #     $r.^mixin( role impure { method is-pure(--> False) {}});
+        # }
+        sub foo ($a?, $b? --> Nil)  {
+             #if $a.isa(Tester) { $a."$name"()}
+             #else { quietly callsame}
+
+        }
+        #&reg.?wrap(sub (| --> Nil) {})
+
+        OUR::EXPORT::DEFAULT::{"\&&reg.name()"} := sub ($a?, $b?) { if $a.isa(Tester) {  $a."$name"($b)}
+                                                                    else { &reg($a, $b)}}
+        # if not &reg.?is-wrapped {
+        #     &reg.wrap(-> $a?, $b? { if $a.isa(Tester) {  $a."$name"($b)}
+        #                             else {callsame}})
+        # }
+    }
+
+       #say OUR::EXPORT::DEFAULT::.keys;
+       #say OUR::.keys;
+my $v := '!eql';
+multi infix:<eql>(Tester:D \t, Str() $exp) is export { t.eq($exp)}
+our proto prefix:<Is>(|) is tighter(&postfix:<i>) is export  {*}
+multi prefix:<Is>(&block) { Tester.new: :&block}
+multi prefix:<Is>(Mu $value)  { dd; Tester.new: :$value}
+our proto infix:<is>(|) is tighter(&postfix:<i>) is export  {*}
+multi infix:<is>(&block, &op) { dd &op; Tester.new: :&block}
+#our proto infix:<?>(|)  is export  {*}
+#multi infix:<?>(Tester \t, $b?) { }
+#our proto postfix:<?>(|)  is export is assoc<left> is looser(&infix:<or>)  {*}
+#multi postfix:<?>(Mu \t) { say t; t }
+
+#----------------;
+
+#multi infix:«$v»(Tester:D \t, Str() $exp) is export { t.ne($exp)}
+# [ <eq ne>, <before after>, <gt ge>, <lt le>, &[eqv], &[==], &[≠], &[<], &[<=],
+#           &[>], &[>=], &[===], &[=:=], &[=~=], &[~~], &[∈], &[∉], &[≡], &[≢], &[∋], &[∌], &[⊂], &[⊄], &[⊆],
+#           &[⊈], &[⊃], &[⊅], &[⊇], &[⊉],
+#         ] ->
+# for (<eq ne>, ) -> $ ($op, $rev) {
+#     # OUR::EXPORT::DEFAULT::{"&infix:<$rev>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$rev"(b) }
+#     #                                                          else { CORE::{"&infix:<$rev>"}(a, b)  }}
+#     # OUR::EXPORT::DEFAULT::{"&infix:<!$rev>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."!$rev"(b) }
+#     #                                                          else { CORE::{"&infix:<$op>"}(a, b)  }}
+#     OUR::EXPORT::DEFAULT::{"&infix:<$op>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$op"(b) }
+#                                                              else { CORE::{"&infix:<$op>"}(a, b)  }}
+#     OUR::EXPORT::DEFAULT::{"&infix:<!$op>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."!$op"(b) }
+#                                                              else { CORE::{"&infix:<$rev>"}(a, b)  }}}
 
 
 # TODO: Finish and test {}.output.is.…
@@ -266,3 +311,15 @@ my class Tester {
             # for ((<is has>, method {Tester.new: :block(self)}), (<lacks isn't>, method {$.is.not}),
             #      ((<output>,), method {...})) -> $ (@names, &m) {
             #     Block.^add_method($_, &m.set_name($_)) for @names} }
+
+          #$r.?wrap(-> | { $?CLASS.chain.push: $r.name; callsame });
+
+#our proto postcircumfix:<is to>(|) is tighter(&postfix:<i>) is export  {*}
+#multi postcircumfix:<is to>(&block, &op) { Tester.new(:&block)}
+
+            # &reg.wrap(-> $a?, $b? {dd;
+            #                        if $a ~~ Tester:D and $b ~~ Str() {die }
+            #                        else { callsame }});
+
+        # OUR::EXPORT::DEFAULT::{"&infix:<$name>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$name"(b) }
+        #                                                             else { CORE::{"&infix:<$op>"}(a, b)  }}
