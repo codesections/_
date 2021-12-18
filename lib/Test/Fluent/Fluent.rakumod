@@ -1,325 +1,62 @@
 unit module Test::Fluent;
 use Test;
 
+# TODO: - Extract Tester.actual from a block if we get one in Tester.new (& save any Failure/Ex.)
+#       - Set Tester.description based on &block.WHY (if any)
+#       - Use other Test fns (&is, &is-deeply, &fails-like) when they'd give better msgs that &cmp-ok
+#       - Wrap Tester.actual in a block where needed for &dies-ok, etc.
+#       - Add methods (maybe via metaprogramming -- see old.rakumod) for other comparisons (.isa, .^can, .does, etc)
+#       - Wrap &done-testing (and maybe &plan?) to get rid of &run-tests
+#       - add *far* more tests (esp. of correctly _failing_ tests)
+
 OUR::{$_} := ::{$_} for <&plan &done-testing &subtest &diag &skip &bail-out &todo &skip-rest>;
 
+my class UnsetValue {}
+class Tester {...}
+class TestRunner { has @!tests;
+    multi method add-test(Tester:D $t) { @!tests.push($t) andthen $t }
+    multi method run-all() { for @!tests { .expected =:= UnsetValue ?? die('-- no ?') !! .run }}}
 
-my class Tester is Callable {
+my $tr = TestRunner.new;
+multi run-tests is export { $tr.run-all}
 
-    multi trait_mod:<is>(Routine:D $r, :$test) { trait_mod:<is>($r, :test-assertion) }
-    has      &.block;
-    has Bool:D $.negated=False;
-    has      @.chain;
-    has Mu   $.value handles <gist raku Str> = do given try {no fatal; &!block()} { when ?$! { $! }
-                                                                                    default  {.so; $_ }};
-
-    multi method msg($exp?) {
-        my ($got, $expect) = (($!value.raku.chars < 20 ?? $!value.gist !! '$GOT'),
-                              ($exp.raku.?chars < 20 ?? $exp.gist !! '$EXPECTED'));
-        do if &!block.WHY -> $_ { ~$_ }
-        else { "Is $got " ~((@!chain||'').join(" ")) ~ (" $expect ?" with $exp);}
-    }
-
-    multi method CALL-ME(|c) { dd c}
-
-    multi method a($exp)          is test { $.has.a.class: $exp}
-    multi method alive            is test { ($!negated ?? &dies-ok !! &lives-ok)(&!block,       |$.msg); self }
-    multi method like(Regex $exp) is test { ($!negated ?? &unlike  !! &like    )($.value, $exp, |$.msg); self }
-    multi method like($exp)       is test { $.is."~~"($exp) }
-    multi method true             is test { ($!negated ?? &nok     !! &ok      )($.value,       |$.msg); self }
-    multi method dead             is test { $.not.alive.not; self }
-
-    multi method a                 is test { self          }
-    multi method map(&fn)          is test { (my &block = {fn($!value)}).set_why(&!block.WHY);
-                                             $.clone: :&block, :value(block) }
-    multi method ok                is test { $.true        ; self}
-    multi method deeply($_)        is test { $.eqv:    $_  ; self} # TODO
-    multi method approximately(|c) is test { $.approx: |c  ; self} # TODO
-    multi method auto-flunk        is test { flunk  |$.msg ; self}
-    multi method auto-pass         is test { pass   |$.msg ; self}
-
-    multi method approx(|c)        is test { is-approx   $!value, |c, |$.msg; self }      # TODO negate
-    multi method usable            is test { use-ok      $!value,           |$.msg; self} # TODO negate
-    method sink(|) { } #TODO -cut?
-
-    multi method class($_)   is test { my $exp = ($_ ~~ Str:D ?? ::($_) !! $_);
-                                       if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
-                                       $!negated ?? $.and."~~"($exp)  !! isa-ok  $.value, $exp, |$.msg; self }
-    multi method role($_) is test { my $exp = ($_ ~~ Str:D ?? ::($_) !! $_);
-                                    $!negated ?? $.is."~~"($exp) !! does-ok $.value, $exp, |$.msg; self}
-    multi method method(Str $exp) is test { $!negated ?? $.map(*.^can($exp)).true !! can-ok  $.value, $exp, |$.msg; self}
-    multi method attribute(Str $exp) is test { $.map(*.^attributes.grep(*.has_accessor).grep(/$exp$/).so).true ; self}
- BEGIN {
-    for <not lacking without lacks doesn't> -> $name {
-        Tester.^add_method($name, (method () is test { $.clone: :negated(not $.negated)}).set_name($name))}
-
-    for [ &[eq], &[!eq]; &[ne], &[!ne]; &[before], &[!before]; &[after], &[!after]; &[gt], &[!gt]; &[ge], &[!ge];
-          &[lt], &[!lt]; &[le], &[!le]; &[eqv], &[!eqv]; &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=];
-          &[>], &[!>]; &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[=~=], &[!=~=]; &[~~], &[!~~]; &[∈], &[!∈];
-          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄]; &[⊆], &[!⊆];
-          &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
-        ] -> $ (&reg, &neg)  {
-        my $name = S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name;
-        my method op( $_) is test { cmp-ok $.value, [&reg, &neg][$.negated], $_, |$.msg($_); self}
-        my method rev($_) is test { cmp-ok $.value, [&neg, &reg][$.negated], $_, |$.msg($_); self}
-        &op.set_name: $name;
-        &rev.set_name: "!$name";
-
-        #&reg does role impure { method is-pure (--> False) {}};
-        Tester.&{.^add_method: $name~'-to', &op; .^add_method: "!{$name}-to", &rev }
-        Tester.&{.^add_method: $name, &op; .^add_method: "!$name", &rev }
-    }
-    Tester.^add_method($_, method {self}.set_name($_)) for <an and is object obj type that has>;
-}
-    submethod TWEAK(|) { for self.^methods(:local) -> $m {
-       if not $m.?is-wrapped and $m.^can('is-test-assertion') {
-           $m.?wrap(method (|) is test-assertion {
-                           @!chain.push($m.name); callsame }) }}}
+class Tester { has Mu  $.expected  = UnsetValue;
+               has Mu  $.actual    is required;
+               has     &.comparator = &die.assuming('No comparator set');
+               has Str $.description;
+    multi method run                    { cmp-ok $!actual, &!comparator, $!expected, |$.msg }
+    multi method expect(Mu $!expected)  { self }
+    multi method cmp-with(&!comparator) { self }
+    method Bool(|) { # *a hack*: .Bool is called from &prefix:<!> as part of the execution of &[!~~].
+        # See /src/Perl6/Actions.nqp line 7,458. Because &[!~~] is currently a compiler built-in, this seems to be the
+        # only way to detect that we're being called from it rather than &[~~].  So, we use this to negate &[~~] as needed
+        &!comparator = &[!~~] if (callframe(1).code, &!comparator)».name «eq» ('prefix:<!>', 'infix:<~~>');
+        0 }
+    submethod new($actual) { $tr.add-test: self.bless: :$actual }
+    multi method msg       { with $!description       { $_ }
+                             orwith &!comparator.name { m/'infix:' . (.*) .$/;
+                                                        "Is $!actual.raku() {$0 // $_ } $!expected.raku() ?" }}
 }
 
-for [ &[eq], &[!eq]; &[ne], &[!ne]; &[before], &[!before]; &[after], &[!after]; &[gt], &[!gt]; &[ge], &[!ge];
-          &[lt], &[!lt]; &[le], &[!le]; &[eqv], &[!eqv]; &[==], &[!==]; &[≠], &[!≠]; &[<], &[!<]; &[<=], &[!<=];
-          &[>], &[!>]; &[>=], &[!>=]; &[===], &[!===]; &[=:=], &[!=:=]; &[=~=], &[!=~=];  &[∈], &[!∈];
-          &[∉], &[!∉]; &[≡], &[!≡]; &[≢], &[!≢]; &[∋], &[!∋]; &[∌], &[!∌]; &[⊂], &[!⊂]; &[⊄], &[!⊄]; &[⊆], &[!⊆];
-          &[⊈], &[!⊈]; &[⊃], &[!⊃]; &[⊅], &[!⊅]; &[⊇], &[!⊇]; &[⊉], &[!⊉]
-        ] ->$ (&reg, &neg)  {
-        my $name = S['infix:'['<'|'«'] (.*) ['»'|'>']] = $0 with &reg.name;
-        #&trait_mod:<is>(&reg, :pure(0));
-        #say &reg.?is-pure;
+for [ &[eq], &[!eq], &[ne], &[!ne], &[before], &[!before], &[after], &[!after], &[gt], &[!gt], &[ge], &[!ge],
+      &[lt], &[!lt], &[le], &[!le], &[eqv], &[!eqv], &[==], &[!==], &[≠], &[!≠], &[<], &[!<], &[<=], &[!<=],
+      &[>], &[!>], &[>=], &[!>=], &[===], &[!===], &[=:=], &[!=:=], &[=~=], &[!=~=],  &[∈], &[!∈],
+      &[∉], &[!∉], &[≡], &[!≡], &[≢], &[!≢], &[∋], &[!∋], &[∌], &[!∌], &[⊂], &[!⊂], &[⊄], &[!⊄], &[⊆], &[!⊆],
+      &[⊈], &[!⊈], &[⊃], &[!⊃], &[⊅], &[!⊅], &[⊇], &[!⊇], &[⊉], &[!⊉],] -> &fn  {
+    # We shadow ops instead of .wrap'ing them to avoid "unused is Sink contex" warnings.  This handles all binary ops
+    # *except* for &[~~] and &[!~~] – those are compiler built-ins and need trickery with ACCEPTS and &prefix:<!>
+    sub f (Mu \lhs, Mu \rhs, |c) { lhs ~~ Tester ?? lhs.cmp-with(&fn).expect(rhs) !! fn(lhs, rhs, |c) }
+    &f.set_name(&fn.name.uc);
+    OUR::EXPORT::DEFAULT::{"\&&fn.name()"} := &f }
 
-
-        # sub trait_mod:<is>(Routine:D $r, :$non-pure!) {
-        #     $r.^mixin( role impure { method is-pure(--> False) {}});
-        # }
-        sub foo ($a?, $b? --> Nil)  {
-             #if $a.isa(Tester) { $a."$name"()}
-             #else { quietly callsame}
-
-        }
-        #&reg.?wrap(sub (| --> Nil) {})
-
-        OUR::EXPORT::DEFAULT::{"\&&reg.name()"} := sub ($a?, $b?) { if $a.isa(Tester) {  $a."$name"($b)}
-                                                                    else { &reg($a, $b)}}
-        # if not &reg.?is-wrapped {
-        #     &reg.wrap(-> $a?, $b? { if $a.isa(Tester) {  $a."$name"($b)}
-        #                             else {callsame}})
-        # }
-    }
-
-       #say OUR::EXPORT::DEFAULT::.keys;
-       #say OUR::.keys;
-my $v := '!eql';
-multi infix:<eql>(Tester:D \t, Str() $exp) is export { t.eq($exp)}
 our proto prefix:<Is>(|) is tighter(&postfix:<i>) is export  {*}
-multi prefix:<Is>(&block) { Tester.new: :&block}
-multi prefix:<Is>(Mu $value)  { dd; Tester.new: :$value}
-our proto infix:<is>(|) is tighter(&postfix:<i>) is export  {*}
-multi infix:<is>(&block, &op) { dd &op; Tester.new: :&block}
-#our proto infix:<?>(|)  is export  {*}
-#multi infix:<?>(Tester \t, $b?) { }
-#our proto postfix:<?>(|)  is export is assoc<left> is looser(&infix:<or>)  {*}
-#multi postfix:<?>(Mu \t) { say t; t }
+multi prefix:<Is>(Mu \value) { Tester.new: value}
 
-#----------------;
-
-#multi infix:«$v»(Tester:D \t, Str() $exp) is export { t.ne($exp)}
-# [ <eq ne>, <before after>, <gt ge>, <lt le>, &[eqv], &[==], &[≠], &[<], &[<=],
-#           &[>], &[>=], &[===], &[=:=], &[=~=], &[~~], &[∈], &[∉], &[≡], &[≢], &[∋], &[∌], &[⊂], &[⊄], &[⊆],
-#           &[⊈], &[⊃], &[⊅], &[⊇], &[⊉],
-#         ] ->
-# for (<eq ne>, ) -> $ ($op, $rev) {
-#     # OUR::EXPORT::DEFAULT::{"&infix:<$rev>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$rev"(b) }
-#     #                                                          else { CORE::{"&infix:<$rev>"}(a, b)  }}
-#     # OUR::EXPORT::DEFAULT::{"&infix:<!$rev>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."!$rev"(b) }
-#     #                                                          else { CORE::{"&infix:<$op>"}(a, b)  }}
-#     OUR::EXPORT::DEFAULT::{"&infix:<$op>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$op"(b) }
-#                                                              else { CORE::{"&infix:<$op>"}(a, b)  }}
-#     OUR::EXPORT::DEFAULT::{"&infix:<!$op>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."!$op"(b) }
-#                                                              else { CORE::{"&infix:<$rev>"}(a, b)  }}}
-
-
-# TODO: Finish and test {}.output.is.…
-#       should .is(val) be legal?  Maybe with ~~ semantics?
-#       better default msgs?
-#       consider accepting long params w/ $.approx (maybe via map?)
-#       does {'s' + 1}.is.not.dead: :like(X::AdHoc) even make sense?
-#         ^^^ maybe cut it and chain so we can do {'s' + 1}.is.dead.and.not.eqv
-#       find different name for .is / .is.like. #         - .is.equal? #         - .is.match-for? .is.match.for?
-                                                #         - .is(* …)   #         - .is.same-as? .is.same.as?
-
-
-    # submethod new(&b) {
-    #     for self.^methods(:local) -> $m { $m.?wrap(-> | {unless $m.name eq 'BUILDALL'|'raku' {#`[TODO]}; callsame }) }
-    #     self.bless: :block(&b);
-    # }
-#sub attest(&block) is export { Tester.new: :&block }
-
-
-# my role TestErrFmt[:$got, :$op, :$exp] {
-#     method say($_) { .chars ≤ 80 && .trim.starts-with('# exp') ?? callwith("# comparison failed: $got $op {$exp.raku}")
-#                                                                !! callsame }}
-                # my \op  = method ($exp)  {
-                #     &Test::failure_output() = $PROCESS::ERR but TestErrFmt[:got($.value.raku), :op($name), :$exp] ;
-                #     cmp-ok $.value, [&reg, &neg][$.negated], $exp, |$.msg;
-                #     &Test::failure_output() = $PROCESS::ERR;
-                #     self
-                # }.set_name: $name;
-
-            # say $n;
-            # #my &cf = nextcallee;
-            # note 'enter';
-            # say Backtrace.new.full;
-            # say my $callframe = callwith($n++);
-            # while $callframe.file ne $?FILE | $calling-file { say $callframe = callwith($n++)}
-
-            # while $callframe.file ne $calling-file {
-            #     note "\n======";
-            #     say $callframe.file;
-            #     say $calling-file;
-            #     say $callframe.file eq $calling-file;
-            #     say $callframe = callwith($n++)}
-            # note '++++++++++++++++?=================================?';
-
-# multi sub trait_mod:<is>(Routine $s, :$hidden-from-tests) {
-# note "????????????";
-# my $wh = $s.add_phaser('ENTER ', {
-#  note 'ENTER =======================';
-#                               &callframe.wrap: {
-
-#             state $first = True;
-#             do if $first { $first = False andthen $calling-frame } // callsame }});
-
-# note "????????????--3";
-# $s.add_phaser('LEAVE', { say 5;
-#                           &callframe.unwrap($wh)});
-
-# }
-
-# my role Testable[:$negated!] does Testable  {
-
-#     multi method eq(&b: $_)      is test { isnt( b, $_,    |$.msg) }
-#     multi method true(&b:)       is test { nok( b,         |$.msg) }
-#     multi method auto-pass(&b:)  is test { flunk(          |$.msg) }
-#     multi method auto-flunk(&b:) is test { pass(           |$.msg) }
-#     multi method like(&b: $_)    is test { unlike(  b, $_, |$.msg) }
-#     multi method alive(&b:)      is test { dies-ok( &b,    |$.msg) }
-#     multi method dead(&b:)       is test { lives-ok(&b,    |$.msg) }
-#     multi method eqv(&b: $_)     is test { my $got = b();
-#         diag "expected: anything except $_.raku()\n     got: $got" unless ok($got !=== $_, &.msg)}
-#     multi method not { self.^parents.head but Testable[:non-negated] }
-# }
-# my role Testable[:$non-negated!] does Testable  {
-#     multi method not { self.^parents.head  but Testable[:negated] }
-#     multi method type { self but role { method that(|c) { $.type-that(|c)}} }
-
-#     multi method a                 is test { self }
-#     multi method auto-pass         is test { pass                   |$.msg }
-#     multi method auto-flunk        is test { flunk                  |$.msg }
-#     multi method a(&b: Mu:U \type) is test { isa-ok       b, type,  |$.msg}
-#     multi method usable(&b:)       is test { use-ok       b,        |$.msg}
-#     multi method approximately(|c) is test { $.approx:    |c }
-#     multi method eq(&b: $_)        is test { is           b, $_,    |$.msg }
-#     multi method true(&b:)         is test { ok           b,        |$.msg }
-#     multi method like(&b: $_)      is test { like         b, $_,    |$.msg }
-#     multi method alive(&b:)        is test { lives-ok    &b,        |$.msg }
-#     multi method dead(&b:)         is test { dies-ok     &b,        |$.msg }
-#     multi method dead(&b: :$like!,
-#                       *%matcher)   is test { throws-like &b, $like, |$.msg, |%matcher }
-
-#     multi method like(&b: $_, :cmp-with(:$with)!) is test { cmp-ok b, $with, $_, |$.msg }
-#     multi method eqv(&b: Mu $_ )                  is test { is-deeply b, $_, |$.msg }
-#     multi method failure(&b: :$like!)             is test { fails-like &b, $like, |$.msg }
-#     multi method failure(&b:)                     is test { isa-ok my $f = b, Failure, |$.msg;
-#                                                             $f.handled = True }
-
-#     multi method approx(&b: $_, :relative-tolerance(:$rel-tol), :absolute-tolerance(:$abs-tol)) is test {
-#         is-approx b, $_, $.msg, |(:$rel-tol with $rel-tol), |(:$abs-tol with $abs-tol) }
-
-#     method type-that(&b:) {
-#         self but role { multi method isa(&b: Mu \exp)     is test { $.a: exp  }
-#                         multi method does(&b: Mu \exp)    is test { does-ok b, exp,      |$.msg}
-#                         multi method can(&b: Str \exp)    is test { can-ok  b, exp,      |$.msg}
-#                         multi method can(&b: *%h where 1) is test { can-ok  b, %h.kv[0], |$.msg}}}
-# }
-
-# #multi sub postfix:<is>(&b) is export { &b but Testable[:non-negated]}
-# #multi sub postfix:<?>(|) is export { }
-# multi sub is(&got, &expected) is export { expected Tester.new: :&got }
-# sub Is(&got) is export { Tester.new: :&got }
-# #sub Is(\got) is export { {got} but Testable[:non-negated]}
-
-    #multi method failure(:(:$_=&!b())) is test { isa-ok $_, Failure, |$.msg; .handled = True;}
-    #multi method failure               is test { isa-ok &!b().&{.handled = True; $_}, Failure, |$.msg}
-    #multi method failure               is test { isa-ok &!b().&{$_// $_}, Failure, |$.msg}
-  # multi method eqv($_)    is test { my $got = &!b();
-  #     diag "expected: anything except $_.raku()\n     got: $got" unless ok($got !=== $_, &.msg)}
-    # multi method eqv($exp)    is test {
-    #     given &!b() { when $exp { diag "expected: anything except $exp.raku()\n     got: $_" }
-    #                   default   { ok($_ !=== $exp, &.msg)}}}
-
-    # multi method approx($_, :relative-tolerance(:$rel-tol), :absolute-tolerance(:$abs-tol)) is test {
-    #     is-approx &!b(), $_, $.msg, |(:$rel-tol with $rel-tol), |(:$abs-tol with $abs-tol) }
-
-    # multi method eqv($exp)  is test { &!b().&{ ok($_ !eqv $exp, |$.msg)
-    #                                              or diag "expected: {$exp.raku} !eqv {.raku}" }}
-
-    # multi method eqv($exp)  is test { [&{is-deeply                     &!b(), $exp, |$.msg },
-    #                                    &{cmp-ok             &!b(),   &[!eqv], $exp, |$.msg }][$!negated]}
-
-    # # multi method eqv($exp, 0 :$!=$.negated)  is test { is-deeply &!b(),            $exp,    |$.msg }
-    # # multi method eqv($exp, 1 :$!=$.negated)  is test { cmp-ok    &!b(),   &[!eqv], $exp,    |$.msg }
-    # multi method eqv($exp) is test { when $!negated.so  { cmp-ok     &!b(),   &[!eqv], $exp,    |$.msg }
-    #                                  when $!negated.not { is-deeply  &!b(),            $exp,    |$.msg }}
-
-    # multi method dead(
-    #      :like($exp)!, *%m)   is test { (&!block,   $exp, |$.msg).&{ [&neqv, {throws-like |@_, %m}][$!negated](|$_) }; self }
-
-    #multi method an                is test { self          }
-    #multi method and               is test { self          }
-    #multi method is                is test { self          }
-
-    #multi method eqv($exp)    is test { ($.value, $exp, |$.msg).&{ [&is-deeply,   &neqv][$!negated](|$_) }; self }
-
-
-    # multi method type(:($t=self)) { self but role { method that(|c)  {
-    #     self but role { multi method isa(Mu \exp)  is test { $.a: exp;                     $t }
-    #                     multi method does(Mu \exp) is test { does-ok $.value, exp, |$.msg; $t }
-    #                     multi method can(Str \exp) is test { can-ok  $.value, exp, |$.msg; $t }}}}}
-
-    #`{ if ($exp, $!value) ~~ (Exception, Failure) { $!value .= exception }
-                                        $!negated ?? $.and."~~"($exp)  !! isa-ok  $.value, $exp, |$.msg; self}
-
-    # my class Printer { has $!txt handles <Str> = '';
-    #                    method print(+a) { $!txt ~= a.join }}
-    # multi method output(&block: Bool :$stdout=False, Bool :$stderr=False)         {
-    #     { temp $*OUT = my $out = ($stdout || none($stdout, $stderr)) ?? Printer.new !! '';
-    #       temp $*ERR = my $err = ($stderr || none($stdout, $stderr)) ?? Printer.new !! '';
-    #       block();
-    #       $out ~ $err}.&{.set_why(&block.WHY); $_}}
-
-# role Testable {
-    #multi method is(&block:) { Tester.new: :&block }
-    #multi method ::('has')         { $.is }
-    #multi method lacks       { $.is.not }
-    #multi method isn't       { $.is.not }
-    #multi method output(|)   {... 'NYI'}
-# }
-
-    # for <an and is object obj type that has> -> $name {
-    #     Tester.^add_method($name, (method () is test {                          ; self }).set_name($name))}
-
-            # for ((<is has>, method {Tester.new: :block(self)}), (<lacks isn't>, method {$.is.not}),
-            #      ((<output>,), method {...})) -> $ (@names, &m) {
-            #     Block.^add_method($_, &m.set_name($_)) for @names} }
-
-          #$r.?wrap(-> | { $?CLASS.chain.push: $r.name; callsame });
-
-#our proto postcircumfix:<is to>(|) is tighter(&postfix:<i>) is export  {*}
-#multi postcircumfix:<is to>(&block, &op) { Tester.new(:&block)}
-
-            # &reg.wrap(-> $a?, $b? {dd;
-            #                        if $a ~~ Tester:D and $b ~~ Str() {die }
-            #                        else { callsame }});
-
-        # OUR::EXPORT::DEFAULT::{"&infix:<$name>"} := sub (\a, \b) { if a ~~ Tester:D and b ~~ Str() {a."$name"(b) }
-        #                                                             else { CORE::{"&infix:<$op>"}(a, b)  }}
+our proto postfix:<?>(|)  is export {*}
+multi postfix:<?>(Mu \exp) { # This is for &[~~]: since we can't wrap it, we make sure every RHS has an .ACCEPTS method
+    # that calls .cmp-with. Some RHS are :U roles (eg, `Is 5 ~~ Stringy?`) which don't accept mixins - thus the FakeRole
+    if exp.HOW.^can('pun') { unless exp.HOW ~~ Metamodel::ParametricRoleGroupHOW { say "ParametricRoleGroupHOW: " ~exp.HOW }
+        my class FakeRole { has $.inner handles *;
+            multi method ACCEPTS(Tester:D $t) { $t.cmp-with(&[~~]).expect($.inner)}}.new: :inner(exp) }
+    else { exp but role { only method ACCEPTS(Tester:D $t --> Tester:D) { $t.cmp-with(&[~~]).expect(exp)}}}
+}

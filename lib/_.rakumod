@@ -15,12 +15,12 @@ my constant @default-export-pairs = ('&term:<&_>'  => &Self::Recursion::term:<&_
                                      '&paragraphs' => &Text::Paragraphs::paragraphs,
                                      '&wrap-words' => &Text::Wrap::wrap-words);
 
-my constant @test-fluent-exports = <&plan &done-testing &subtest &diag &skip-rest &bail-out>;
+my constant @test-fluent-exports = <&plan &done-testing &subtest &diag &skip-rest &bail-out>; # &prefix:<Is> &postfix:<?>>;
 my constant @test-doctest-exports = <&doctest>;
 
 package EXPORT::DEFAULT { OUR::{.key} := .value                      for @default-export-pairs }
 package EXPORT::Test    { OUR::{$_} := Test::Fluent::{$_}            for @test-fluent-exports;
-                          #OUR::{.key} := .value                      for Test::Fluent::EXPORT::DEFAULT::.pairs;
+                          OUR::{.key} := .value                      for Test::Fluent::EXPORT::DEFAULT::.pairs;
                           OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports; }
 package EXPORT::ALL     { OUR::{.key} := .value                      for @default-export-pairs;
                           OUR::{$_} := Test::Doctest::Markdown::{$_} for @test-doctest-exports;
